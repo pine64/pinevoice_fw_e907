@@ -1,0 +1,1799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PWM LED Show Editor</title>
+    <style>
+        :root {
+            --bg-ink: #131817;
+            --bg-panel: rgba(28, 36, 35, 0.82);
+            --bg-panel-strong: rgba(19, 25, 24, 0.96);
+            --bg-soft: rgba(229, 201, 141, 0.1);
+            --line: rgba(255, 242, 210, 0.16);
+            --line-strong: rgba(255, 242, 210, 0.28);
+            --text-main: #f5ebd3;
+            --text-soft: #d7ccb3;
+            --text-dim: #968d7a;
+            --accent: #ffb84d;
+            --accent-strong: #ffd972;
+            --teal: #7fd5d0;
+            --danger: #ff7f6e;
+            --success: #9ee36f;
+            --shadow: 0 18px 60px rgba(0, 0, 0, 0.34);
+            --radius: 22px;
+            --radius-sm: 14px;
+            --font-main: "Avenir Next", "Gill Sans", "Trebuchet MS", sans-serif;
+            --font-mono: "SFMono-Regular", "Cascadia Code", "Menlo", monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            min-height: 100%;
+        }
+
+        body {
+            margin: 0;
+            font-family: var(--font-main);
+            color: var(--text-main);
+            background:
+                radial-gradient(circle at top left, rgba(255, 189, 89, 0.18), transparent 32%),
+                radial-gradient(circle at top right, rgba(96, 172, 164, 0.2), transparent 28%),
+                linear-gradient(135deg, #121614 0%, #18211f 38%, #0f1312 100%);
+            letter-spacing: 0.02em;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background:
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 28px 28px;
+            mask-image: radial-gradient(circle at center, black 55%, transparent 100%);
+        }
+
+        .app-shell {
+            width: min(1600px, calc(100vw - 32px));
+            margin: 18px auto 28px;
+        }
+
+        .masthead {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+
+        .hero,
+        .toolbar {
+            border: 1px solid var(--line);
+            background: linear-gradient(180deg, rgba(33, 43, 42, 0.9), rgba(18, 23, 22, 0.88));
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .hero {
+            padding: 24px 26px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            right: -40px;
+            top: -50px;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 217, 114, 0.16);
+            background: radial-gradient(circle, rgba(255, 184, 77, 0.18), transparent 72%);
+        }
+
+        .hero h1 {
+            margin: 0 0 10px;
+            font-size: clamp(2rem, 4vw, 3.3rem);
+            line-height: 0.95;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            max-width: 12ch;
+        }
+
+        .hero p {
+            margin: 0;
+            max-width: 56ch;
+            color: var(--text-soft);
+            line-height: 1.55;
+        }
+
+        .toolbar {
+            padding: 18px;
+            display: grid;
+            gap: 12px;
+            align-content: start;
+        }
+
+        .toolbar-grid {
+            display: grid;
+            gap: 10px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: 320px minmax(0, 1fr) 400px;
+            gap: 18px;
+            align-items: start;
+        }
+
+        .panel {
+            border: 1px solid var(--line);
+            background: linear-gradient(180deg, var(--bg-panel), var(--bg-panel-strong));
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 18px 18px 14px;
+            border-bottom: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .panel-header h2,
+        .panel-header h3 {
+            margin: 0;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--accent-strong);
+        }
+
+        .panel-body {
+            padding: 18px;
+        }
+
+        .shows-panel .panel-body {
+            padding-top: 14px;
+        }
+
+        .show-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .show-item {
+            width: 100%;
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.03);
+            color: inherit;
+            text-align: left;
+            padding: 14px 14px 12px;
+            cursor: pointer;
+            transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+        }
+
+        .show-item:hover,
+        .show-item:focus-visible {
+            transform: translateY(-1px);
+            border-color: var(--line-strong);
+            background: rgba(255, 255, 255, 0.06);
+            outline: none;
+        }
+
+        .show-item.active {
+            border-color: rgba(255, 217, 114, 0.42);
+            background:
+                linear-gradient(135deg, rgba(255, 184, 77, 0.13), rgba(127, 213, 208, 0.08)),
+                rgba(255, 255, 255, 0.06);
+        }
+
+        .show-item-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .show-name {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .show-symbol {
+            font-family: var(--font-mono);
+            color: var(--text-dim);
+            font-size: 0.75rem;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .show-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .tag,
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.04);
+            font-size: 0.76rem;
+            color: var(--text-soft);
+        }
+
+        .pill-strong {
+            border-color: rgba(255, 217, 114, 0.28);
+            color: var(--accent-strong);
+        }
+
+        .button-row,
+        .stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        button,
+        .file-button {
+            appearance: none;
+            border: 1px solid transparent;
+            border-radius: 14px;
+            padding: 10px 14px;
+            font: inherit;
+            color: inherit;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+            cursor: pointer;
+            transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+        }
+
+        button:hover,
+        button:focus-visible,
+        .file-button:hover,
+        .file-button:focus-within {
+            transform: translateY(-1px);
+            border-color: var(--line-strong);
+            outline: none;
+        }
+
+        button.primary {
+            background: linear-gradient(180deg, rgba(255, 184, 77, 0.22), rgba(255, 184, 77, 0.12));
+            border-color: rgba(255, 217, 114, 0.28);
+        }
+
+        button.secondary {
+            background: linear-gradient(180deg, rgba(127, 213, 208, 0.18), rgba(127, 213, 208, 0.08));
+            border-color: rgba(127, 213, 208, 0.2);
+        }
+
+        button.danger {
+            background: linear-gradient(180deg, rgba(255, 127, 110, 0.18), rgba(255, 127, 110, 0.08));
+            border-color: rgba(255, 127, 110, 0.24);
+        }
+
+        button.ghost {
+            background: rgba(255, 255, 255, 0.02);
+            border-color: var(--line);
+        }
+
+        button.small {
+            padding: 8px 10px;
+            font-size: 0.85rem;
+        }
+
+        input,
+        select {
+            width: 100%;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: rgba(7, 10, 10, 0.34);
+            color: var(--text-main);
+            padding: 10px 12px;
+            font: inherit;
+        }
+
+        input:focus-visible,
+        select:focus-visible {
+            outline: 2px solid rgba(255, 217, 114, 0.26);
+            outline-offset: 1px;
+            border-color: rgba(255, 217, 114, 0.28);
+        }
+
+        input[type="color"] {
+            min-height: 46px;
+            padding: 4px;
+        }
+
+        input[type="checkbox"] {
+            width: auto;
+            accent-color: var(--accent);
+        }
+
+        label {
+            display: grid;
+            gap: 8px;
+            font-size: 0.84rem;
+            color: var(--text-soft);
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+        .meta-grid .full {
+            grid-column: 1 / -1;
+        }
+
+        .show-notes {
+            padding: 14px;
+            margin-bottom: 18px;
+            border-radius: 16px;
+            border: 1px solid rgba(127, 213, 208, 0.18);
+            background: rgba(127, 213, 208, 0.06);
+            color: var(--text-soft);
+            line-height: 1.5;
+        }
+
+        .points {
+            display: grid;
+            gap: 14px;
+        }
+
+        .point-card {
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .point-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .point-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+        }
+
+        .swatch {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            background: var(--swatch, #000000);
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.03);
+        }
+
+        .point-grid,
+        .transition-grid,
+        .summary-grid {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .transition-block {
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid var(--line);
+        }
+
+        .transition-title {
+            margin: 0 0 12px;
+            color: var(--accent-strong);
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .mini-help {
+            margin-top: 8px;
+            color: var(--text-dim);
+            font-size: 0.77rem;
+            line-height: 1.45;
+        }
+
+        .preview-stack {
+            display: grid;
+            gap: 18px;
+        }
+
+        .preview-stage {
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            background:
+                radial-gradient(circle at center, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.01) 55%),
+                linear-gradient(180deg, rgba(255, 184, 77, 0.04), rgba(127, 213, 208, 0.05));
+            padding: 22px;
+        }
+
+        .preview-svg {
+            width: min(100%, 280px);
+            display: block;
+            margin: 0 auto;
+        }
+
+        .preview-ring {
+            fill: none;
+            stroke: var(--preview-color, #000000);
+            stroke-width: 3;
+            filter: drop-shadow(0 0 10px color-mix(in srgb, var(--preview-color, #000000) 60%, transparent));
+            transition: stroke 90ms linear;
+        }
+
+        .preview-glow {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.08);
+            stroke-width: 16;
+        }
+
+        .preview-core {
+            fill: rgba(255, 255, 255, 0.03);
+            stroke: rgba(255, 255, 255, 0.08);
+            stroke-width: 1;
+        }
+
+        .preview-caption {
+            margin-top: 14px;
+            text-align: center;
+            color: var(--text-soft);
+        }
+
+        .preview-caption strong {
+            display: block;
+            color: var(--accent-strong);
+            font-size: 0.92rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 6px;
+        }
+
+        .summary-card {
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .summary-label {
+            display: block;
+            color: var(--text-dim);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin-bottom: 6px;
+        }
+
+        .summary-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .timeline {
+            display: flex;
+            gap: 1px;
+            width: 100%;
+            min-height: 16px;
+            padding: 4px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.03);
+            overflow: hidden;
+        }
+
+        .timeline-segment {
+            border-radius: 999px;
+            min-width: 0;
+            flex: var(--segment-weight) 1 0;
+            background: var(--segment-color, #000000);
+        }
+
+        .warnings {
+            display: grid;
+            gap: 8px;
+        }
+
+        .warning {
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 127, 110, 0.22);
+            background: rgba(255, 127, 110, 0.08);
+            color: #ffd8d2;
+            line-height: 1.45;
+        }
+
+        .empty-state {
+            border: 1px dashed var(--line);
+            border-radius: 18px;
+            padding: 30px;
+            text-align: center;
+            color: var(--text-soft);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .hint {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            line-height: 1.55;
+        }
+
+        .footer-note {
+            margin-top: 14px;
+            color: var(--text-dim);
+            font-size: 0.78rem;
+            line-height: 1.5;
+        }
+
+        .hidden-input {
+            position: absolute;
+            width: 0;
+            height: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        @media (max-width: 1240px) {
+            .workspace {
+                grid-template-columns: 280px minmax(0, 1fr);
+            }
+
+            .preview-panel {
+                grid-column: 1 / -1;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .app-shell {
+                width: min(100vw - 18px, 100%);
+                margin: 9px auto 18px;
+            }
+
+            .masthead,
+            .workspace,
+            .meta-grid,
+            .point-grid,
+            .transition-grid,
+            .summary-grid,
+            .toolbar-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero {
+                padding: 20px 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <section class="masthead">
+            <div class="hero">
+                <h1>PWM LED Show Forge</h1>
+                <p>Create color-stop based LED shows, preview them live as a 3px ring, save your working project as JSON, and export a ready-to-drop-in <code>pwm_led_shows.h</code> header for the firmware.</p>
+            </div>
+
+            <div class="toolbar">
+                <div class="panel-header" style="padding:0 0 12px;border:none;background:none;">
+                    <h2>Project Actions</h2>
+                </div>
+                <div class="toolbar-grid">
+                    <button type="button" id="downloadJsonButton" class="primary">Download JSON</button>
+                    <button type="button" id="downloadHeaderButton" class="secondary">Download Header</button>
+                    <button type="button" id="resetProjectButton" class="ghost">Reset Default</button>
+                </div>
+                <label class="file-button" for="jsonLoader">Load JSON</label>
+                <input id="jsonLoader" class="hidden-input" type="file" accept=".json,application/json">
+                <p class="hint">The exported header keeps the show order. Keep that order aligned with <code>light_show_state_types_t</code> in <code>pwm_led.h</code>.</p>
+            </div>
+        </section>
+
+        <main class="workspace">
+            <aside class="panel shows-panel">
+                <div class="panel-header">
+                    <h2>Shows</h2>
+                    <button type="button" id="addShowButton" class="primary small">Add Show</button>
+                </div>
+                <div class="panel-body">
+                    <div id="showList" class="show-list"></div>
+                </div>
+            </aside>
+
+            <section class="panel editor-panel">
+                <div class="panel-header">
+                    <h2>Editor</h2>
+                    <div class="pill">Color Stops + Transitions</div>
+                </div>
+                <div id="editorPanel" class="panel-body"></div>
+            </section>
+
+            <section class="panel preview-panel">
+                <div class="panel-header">
+                    <h2>Preview + Export</h2>
+                    <div class="button-row">
+                        <button type="button" id="togglePreviewButton" class="small">Pause</button>
+                        <button type="button" id="restartPreviewButton" class="small">Restart</button>
+                    </div>
+                </div>
+                <div class="panel-body preview-stack">
+                    <section class="preview-stage">
+                        <svg class="preview-svg" viewBox="0 0 180 180" aria-hidden="true">
+                            <circle class="preview-glow" cx="90" cy="90" r="56"></circle>
+                            <circle class="preview-core" cx="90" cy="90" r="56"></circle>
+                            <circle id="previewRing" class="preview-ring" cx="90" cy="90" r="56"></circle>
+                        </svg>
+                        <div class="preview-caption">
+                            <strong id="previewTitle">No show selected</strong>
+                            <span id="previewSubtitle">The stroke follows the generated frame list, not a separate animation model.</span>
+                        </div>
+                    </section>
+
+                    <section>
+                        <div id="summaryGrid" class="summary-grid"></div>
+                    </section>
+
+                    <section>
+                        <div class="panel-header" style="padding:0 0 12px;border:none;background:none;">
+                            <h3>Timeline</h3>
+                        </div>
+                        <div id="timeline" class="timeline"></div>
+                    </section>
+
+                    <section>
+                        <div class="panel-header" style="padding:0 0 12px;border:none;background:none;">
+                            <h3>Warnings</h3>
+                        </div>
+                        <div id="warnings" class="warnings"></div>
+                    </section>
+
+                    <section>
+                        <div class="panel-header" style="padding:0 0 12px;border:none;background:none;">
+                            <h3>Export</h3>
+                        </div>
+                        <div class="show-notes">
+                            Use <strong>Download Header</strong> in Project Actions to export <code>pwm_led_shows.h</code>. The downloaded header uses the same compiled frame list as this preview.
+                        </div>
+                        <p class="footer-note">JSON download keeps the editable project model. Header download expands each transition into concrete PWM frames for firmware use.</p>
+                    </section>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        (() => {
+            const STORAGE_KEY = "pwm-led-show-editor-v1";
+            const DEFAULT_EXPECTED_SHOW_COUNT = 9;
+            const TRANSITION_OPTIONS = [
+                { value: "instant", label: "Instant Cut" },
+                { value: "linear", label: "Linear Fade" },
+                { value: "ease-in", label: "Ease In" },
+                { value: "ease-out", label: "Ease Out" },
+                { value: "ease-in-out", label: "Ease In-Out" },
+                { value: "sine", label: "Sine Breath" }
+            ];
+
+            const dom = {
+                showList: document.getElementById("showList"),
+                editorPanel: document.getElementById("editorPanel"),
+                summaryGrid: document.getElementById("summaryGrid"),
+                timeline: document.getElementById("timeline"),
+                warnings: document.getElementById("warnings"),
+                previewRing: document.getElementById("previewRing"),
+                previewTitle: document.getElementById("previewTitle"),
+                previewSubtitle: document.getElementById("previewSubtitle"),
+                togglePreviewButton: document.getElementById("togglePreviewButton"),
+                restartPreviewButton: document.getElementById("restartPreviewButton"),
+                addShowButton: document.getElementById("addShowButton"),
+                downloadJsonButton: document.getElementById("downloadJsonButton"),
+                downloadHeaderButton: document.getElementById("downloadHeaderButton"),
+                resetProjectButton: document.getElementById("resetProjectButton"),
+                jsonLoader: document.getElementById("jsonLoader")
+            };
+
+            let project = loadProject();
+            let selectedShowId = project.shows[0] ? project.shows[0].id : null;
+
+            const preview = {
+                rafId: 0,
+                lastTimestamp: 0,
+                elapsedMs: 0,
+                playing: true,
+                frames: [],
+                totalDurationMs: 0,
+                loop: false
+            };
+
+            function uid(prefix) {
+                return prefix + "-" + Math.random().toString(36).slice(2, 10);
+            }
+
+            function createTransition(type = "linear", durationMs = 240, steps = 12) {
+                return {
+                    type,
+                    durationMs,
+                    steps
+                };
+            }
+
+            function createPoint(color = "#000000", holdMs = 0, transition = createTransition()) {
+                return {
+                    id: uid("point"),
+                    color,
+                    holdMs,
+                    transition
+                };
+            }
+
+            function createShow(name, symbol, loop, points) {
+                return {
+                    id: uid("show"),
+                    name,
+                    symbol,
+                    loop,
+                    points
+                };
+            }
+
+            function createDefaultProject() {
+                return {
+                    version: 1,
+                    shows: [
+                        createShow("Network Unauth", "LIGHT_SHOW_NET_UNAUTH", true, [
+                            createPoint("#ffff00", 32, createTransition("linear", 960, 30)),
+                            createPoint("#000000", 500, createTransition("instant", 0, 1))
+                        ]),
+                        createShow("Network Auth", "LIGHT_SHOW_NET_AUTH", false, [
+                            createPoint("#000000", 0, createTransition("instant", 0, 1))
+                        ]),
+                        createShow("Network Connected", "LIGHT_SHOW_NET_CONNECTED", false, [
+                            createPoint("#ffffff", 0, createTransition("instant", 0, 1))
+                        ]),
+                        createShow("Network Disconnected", "LIGHT_SHOW_NET_DISCONNECTED", false, [
+                            createPoint("#ff0000", 200, createTransition("linear", 960, 30)),
+                            createPoint("#000000", 0, createTransition("instant", 0, 1))
+                        ]),
+                        createShow("Listening Start", "LIGHT_SHOW_LISTENING_START", false, [
+                            createPoint("#000000", 16, createTransition("ease-in", 160, 10)),
+                            createPoint("#0000ff", 16, createTransition("ease-out", 160, 10)),
+                            createPoint("#00ffff", 100, createTransition("instant", 0, 1))
+                        ]),
+                        createShow("Listening Active", "LIGHT_SHOW_LISTENING_ACTIVE", false, [
+                            createPoint("#00ffff", 0, createTransition("instant", 0, 1))
+                        ]),
+                        createShow("Listening Stop", "LIGHT_SHOW_LISTENING_STOP", false, [
+                            createPoint("#00ffff", 0, createTransition("ease-in-out", 96, 6)),
+                            createPoint("#0000ff", 80, createTransition("ease-out", 96, 6)),
+                            createPoint("#00ffff", 0, createTransition("instant", 0, 1))
+                        ]),
+                        createShow("Talking Active", "LIGHT_SHOW_TALKING_ACTIVE", false, [
+                            createPoint("#0000ff", 16, createTransition("sine", 960, 60)),
+                            createPoint("#00ffff", 16, createTransition("sine", 960, 60)),
+                            createPoint("#0000ff", 0, createTransition("instant", 0, 1))
+                        ]),
+                        createShow("Talking Stop", "LIGHT_SHOW_TALKING_STOP", false, [
+                            createPoint("#00ffff", 16, createTransition("ease-in-out", 160, 10)),
+                            createPoint("#0000ff", 16, createTransition("linear", 160, 10)),
+                            createPoint("#000000", 1000, createTransition("instant", 0, 1))
+                        ])
+                    ]
+                };
+            }
+
+            function clone(value) {
+                return JSON.parse(JSON.stringify(value));
+            }
+
+            function normalizeHexColor(value, fallback = "#000000") {
+                const trimmed = String(value || "").trim();
+                const longHex = /^#([0-9a-fA-F]{6})$/;
+                const shortHex = /^#([0-9a-fA-F]{3})$/;
+
+                if (longHex.test(trimmed)) {
+                    return "#" + trimmed.slice(1).toLowerCase();
+                }
+
+                if (shortHex.test(trimmed)) {
+                    const body = trimmed.slice(1).toLowerCase();
+                    return "#" + body.split("").map((char) => char + char).join("");
+                }
+
+                return fallback;
+            }
+
+            function clampInt(value, fallback, min = 0, max = 60000) {
+                const parsed = Number.parseInt(value, 10);
+                if (!Number.isFinite(parsed)) {
+                    return fallback;
+                }
+                return Math.min(max, Math.max(min, parsed));
+            }
+
+            function normalizeTransition(transition) {
+                const type = TRANSITION_OPTIONS.some((option) => option.value === transition?.type)
+                    ? transition.type
+                    : "linear";
+                return {
+                    type,
+                    durationMs: clampInt(transition?.durationMs, 240, 0, 120000),
+                    steps: clampInt(transition?.steps, type === "instant" ? 1 : 12, 1, 512)
+                };
+            }
+
+            function normalizePoint(point) {
+                return {
+                    id: typeof point?.id === "string" ? point.id : uid("point"),
+                    color: normalizeHexColor(point?.color),
+                    holdMs: clampInt(point?.holdMs, 0, 0, 120000),
+                    transition: normalizeTransition(point?.transition || {})
+                };
+            }
+
+            function normalizeShow(show, index) {
+                const defaultShow = createShow(
+                    "Show " + (index + 1),
+                    "LIGHT_SHOW_CUSTOM_" + (index + 1),
+                    false,
+                    [createPoint("#000000", 0, createTransition("instant", 0, 1))]
+                );
+                const normalizedPoints = Array.isArray(show?.points) && show.points.length
+                    ? show.points.map(normalizePoint)
+                    : defaultShow.points;
+
+                return {
+                    id: typeof show?.id === "string" ? show.id : defaultShow.id,
+                    name: String(show?.name || defaultShow.name).trim() || defaultShow.name,
+                    symbol: String(show?.symbol || defaultShow.symbol).trim() || defaultShow.symbol,
+                    loop: Boolean(show?.loop),
+                    points: normalizedPoints
+                };
+            }
+
+            function normalizeProject(input) {
+                const shows = Array.isArray(input?.shows) ? input.shows.map(normalizeShow) : [];
+                return {
+                    version: 1,
+                    shows: shows.length ? shows : createDefaultProject().shows
+                };
+            }
+
+            function loadProject() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    if (!raw) {
+                        return createDefaultProject();
+                    }
+                    return normalizeProject(JSON.parse(raw));
+                } catch (error) {
+                    console.warn("Failed to load saved project, using defaults.", error);
+                    return createDefaultProject();
+                }
+            }
+
+            function persistProject() {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(project));
+            }
+
+            function getSelectedShow() {
+                const selected = project.shows.find((show) => show.id === selectedShowId);
+                if (selected) {
+                    return selected;
+                }
+                selectedShowId = project.shows[0] ? project.shows[0].id : null;
+                return project.shows[0] || null;
+            }
+
+            function hexToRgb(hex) {
+                const normalized = normalizeHexColor(hex);
+                return {
+                    r: Number.parseInt(normalized.slice(1, 3), 16),
+                    g: Number.parseInt(normalized.slice(3, 5), 16),
+                    b: Number.parseInt(normalized.slice(5, 7), 16)
+                };
+            }
+
+            function rgbToHex(rgb) {
+                return "#" + [rgb.r, rgb.g, rgb.b]
+                    .map((value) => Math.round(value).toString(16).padStart(2, "0"))
+                    .join("");
+            }
+
+            function easeValue(type, t) {
+                switch (type) {
+                    case "instant":
+                        return 1;
+                    case "linear":
+                        return t;
+                    case "ease-in":
+                        return t * t;
+                    case "ease-out":
+                        return 1 - Math.pow(1 - t, 2);
+                    case "ease-in-out":
+                        return t < 0.5
+                            ? 2 * t * t
+                            : 1 - Math.pow(-2 * t + 2, 2) / 2;
+                    case "sine":
+                        return 0.5 - 0.5 * Math.cos(Math.PI * t);
+                    default:
+                        return t;
+                }
+            }
+
+            function splitDuration(totalDurationMs, steps) {
+                const parts = [];
+                const total = clampInt(totalDurationMs, 0, 0, 120000);
+                const count = Math.max(1, steps);
+                const base = Math.floor(total / count);
+                let remainder = total % count;
+                for (let index = 0; index < count; index += 1) {
+                    let part = base;
+                    if (remainder > 0) {
+                        part += 1;
+                        remainder -= 1;
+                    }
+                    parts.push(part);
+                }
+                return parts;
+            }
+
+            function pushFrame(frames, color, durationMs, force = false) {
+                const normalizedColor = normalizeHexColor(color);
+                const duration = clampInt(durationMs, 0, 0, 120000);
+                if (!force && duration === 0) {
+                    return;
+                }
+                frames.push({ color: normalizedColor, durationMs: duration });
+            }
+
+            function generateTransitionFrames(startColor, endColor, transition) {
+                const start = hexToRgb(startColor);
+                const end = hexToRgb(endColor);
+                const type = transition.type;
+
+                if (type === "instant") {
+                    return [{
+                        color: normalizeHexColor(endColor),
+                        durationMs: clampInt(transition.durationMs, 0, 0, 120000)
+                    }];
+                }
+
+                const steps = Math.max(1, clampInt(transition.steps, 12, 1, 512));
+                const durations = splitDuration(transition.durationMs, steps);
+                const frames = [];
+
+                for (let index = 0; index < steps; index += 1) {
+                    const t = easeValue(type, (index + 1) / steps);
+                    frames.push({
+                        color: rgbToHex({
+                            r: start.r + (end.r - start.r) * t,
+                            g: start.g + (end.g - start.g) * t,
+                            b: start.b + (end.b - start.b) * t
+                        }),
+                        durationMs: durations[index]
+                    });
+                }
+
+                return frames;
+            }
+
+            function compressFrames(frames) {
+                const compact = [];
+
+                frames.forEach((frame, index) => {
+                    const normalizedFrame = {
+                        color: normalizeHexColor(frame.color),
+                        durationMs: clampInt(frame.durationMs, 0, 0, 120000)
+                    };
+
+                    if (!compact.length) {
+                        compact.push(normalizedFrame);
+                        return;
+                    }
+
+                    const previous = compact[compact.length - 1];
+                    if (previous.color === normalizedFrame.color) {
+                        previous.durationMs += normalizedFrame.durationMs;
+                        if (previous.durationMs === 0 && index === frames.length - 1) {
+                            previous.durationMs = 0;
+                        }
+                    } else {
+                        compact.push(normalizedFrame);
+                    }
+                });
+
+                if (!compact.length) {
+                    return [{ color: "#000000", durationMs: 0 }];
+                }
+
+                return compact;
+            }
+
+            function compileShow(show) {
+                const frames = [];
+                if (!show || !show.points.length) {
+                    return [{ color: "#000000", durationMs: 0 }];
+                }
+
+                show.points.forEach((point, index) => {
+                    const isOnlyPoint = show.points.length === 1;
+                    pushFrame(frames, point.color, point.holdMs, isOnlyPoint);
+
+                    if (index < show.points.length - 1) {
+                        const nextPoint = show.points[index + 1];
+                        generateTransitionFrames(point.color, nextPoint.color, point.transition)
+                            .forEach((frame) => frames.push(frame));
+                    }
+                });
+
+                return compressFrames(frames);
+            }
+
+            function showDurationMs(frames) {
+                return frames.reduce((total, frame) => total + frame.durationMs, 0);
+            }
+
+            function sanitizeSymbol(symbol, fallbackIndex) {
+                let value = String(symbol || "")
+                    .trim()
+                    .toUpperCase()
+                    .replace(/[^A-Z0-9_]+/g, "_")
+                    .replace(/_+/g, "_")
+                    .replace(/^_+|_+$/g, "");
+
+                if (!value) {
+                    value = "LIGHT_SHOW_CUSTOM_" + (fallbackIndex + 1);
+                }
+
+                if (/^[0-9]/.test(value)) {
+                    value = "_" + value;
+                }
+
+                return value;
+            }
+
+            function sanitizeArrayBase(symbol, fallbackIndex, usedNames) {
+                let base = sanitizeSymbol(symbol, fallbackIndex).toLowerCase();
+                if (!base.startsWith("light_show_")) {
+                    base = "light_show_" + base;
+                }
+                let candidate = "s_" + base;
+                let suffix = 2;
+                while (usedNames.has(candidate)) {
+                    candidate = "s_" + base + "_" + suffix;
+                    suffix += 1;
+                }
+                usedNames.add(candidate);
+                return candidate;
+            }
+
+            function colorToHeaderHex(color) {
+                return "0x" + normalizeHexColor(color).slice(1).toUpperCase();
+            }
+
+            function generateHeaderContent() {
+                const usedNames = new Set();
+                const sections = [];
+                const tableEntries = [];
+
+                project.shows.forEach((show, index) => {
+                    const frames = compileShow(show);
+                    const arrayName = sanitizeArrayBase(show.symbol, index, usedNames);
+                    const frameLines = frames.map((frame) =>
+                        "    PWM_LED_FRAME(" + frame.durationMs + ", " + colorToHeaderHex(frame.color) + ")"
+                    );
+
+                    sections.push("static const pwm_led_frame_t " + arrayName + "[] = {\n" + frameLines.join(",\n") + "\n};");
+                    tableEntries.push("    PWM_LED_SHOW(" + (show.loop ? 1 : 0) + ", " + arrayName + ")");
+                });
+
+                return [
+                    "#ifndef _PWM_LED_SHOWS_H_",
+                    "#define _PWM_LED_SHOWS_H_",
+                    "",
+                    "#include <stdint.h>",
+                    "",
+                    "#include \"pwm_led.h\"",
+                    "",
+                    "typedef struct {",
+                    "    uint16_t duration_ms;",
+                    "    uint8_t red;",
+                    "    uint8_t green;",
+                    "    uint8_t blue;",
+                    "} pwm_led_frame_t;",
+                    "",
+                    "typedef struct {",
+                    "    const pwm_led_frame_t *frames;",
+                    "    uint16_t frame_count;",
+                    "    uint8_t loop;",
+                    "} pwm_led_show_t;",
+                    "",
+                    "#define PWM_LED_FRAME(duration_ms, color_rgb) \\",
+                    "    { \\",
+                    "        (uint16_t)(duration_ms), \\",
+                    "        (uint8_t)(((color_rgb) >> 16) & 0xFF), \\",
+                    "        (uint8_t)(((color_rgb) >> 8) & 0xFF), \\",
+                    "        (uint8_t)((color_rgb) & 0xFF) \\",
+                    "    }",
+                    "",
+                    "#define PWM_LED_FRAME_COUNT(frames) \\",
+                    "    ((uint16_t)(sizeof(frames) / sizeof((frames)[0])))",
+                    "",
+                    "#define PWM_LED_SHOW(loop_flag, frames) \\",
+                    "    { \\",
+                    "        (frames), \\",
+                    "        PWM_LED_FRAME_COUNT(frames), \\",
+                    "        (uint8_t)(loop_flag) \\",
+                    "    }",
+                    "",
+                    "/*",
+                    " * Generated by the standalone PWM LED Show Forge editor.",
+                    " * Keep this array order aligned with light_show_state_types_t in pwm_led.h.",
+                    " */",
+                    "",
+                    sections.join("\n\n"),
+                    "",
+                    "static const pwm_led_show_t g_pwm_led_shows[LIGHT_SHOW_STATE_MAX] = {",
+                    tableEntries.join(",\n"),
+                    "};",
+                    "",
+                    "#endif"
+                ].join("\n");
+            }
+
+            function generateProjectJson() {
+                return JSON.stringify({
+                    version: 1,
+                    shows: project.shows
+                }, null, 2);
+            }
+
+            function downloadText(filename, content) {
+                const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+                const url = URL.createObjectURL(blob);
+                const anchor = document.createElement("a");
+                anchor.href = url;
+                anchor.download = filename;
+                document.body.appendChild(anchor);
+                anchor.click();
+                anchor.remove();
+                URL.revokeObjectURL(url);
+            }
+
+            function getWarnings(selectedShow, frames) {
+                const warnings = [];
+                const totalDuration = showDurationMs(frames);
+                const symbolCounts = new Map();
+
+                project.shows.forEach((show) => {
+                    const symbol = sanitizeSymbol(show.symbol, 0);
+                    symbolCounts.set(symbol, (symbolCounts.get(symbol) || 0) + 1);
+                });
+
+                if (project.shows.length !== DEFAULT_EXPECTED_SHOW_COUNT) {
+                    warnings.push("This project currently has " + project.shows.length + " shows. The current firmware enum has " + DEFAULT_EXPECTED_SHOW_COUNT + " entries, so keep that order and count in sync before using the exported header.");
+                }
+
+                if (selectedShow && selectedShow.loop && totalDuration === 0) {
+                    warnings.push("This show is marked as looping, but the compiled duration is 0 ms. The firmware runtime will disable zero-duration looping.");
+                }
+
+                symbolCounts.forEach((count, symbol) => {
+                    if (count > 1) {
+                        warnings.push("Duplicate show symbol detected: " + symbol + ". The export will still build unique array names, but the symbol list itself should stay unique.");
+                    }
+                });
+
+                return warnings;
+            }
+
+            function renderShowList() {
+                if (!project.shows.length) {
+                    dom.showList.innerHTML = "<div class=\"empty-state\">No shows yet. Add one to begin.</div>";
+                    return;
+                }
+
+                dom.showList.innerHTML = project.shows.map((show) => {
+                    const frames = compileShow(show);
+                    const activeClass = show.id === selectedShowId ? "active" : "";
+                    return [
+                        "<button type=\"button\" class=\"show-item " + activeClass + "\" data-action=\"select-show\" data-show-id=\"" + show.id + "\">",
+                        "  <div class=\"show-item-top\">",
+                        "    <div>",
+                        "      <div class=\"show-name\">" + escapeHtml(show.name) + "</div>",
+                        "      <div class=\"show-symbol\">" + escapeHtml(show.symbol) + "</div>",
+                        "    </div>",
+                        "    <span class=\"swatch\" style=\"--swatch:" + normalizeHexColor(show.points[0]?.color || "#000000") + ";\"></span>",
+                        "  </div>",
+                        "  <div class=\"show-meta\">",
+                        "    <span class=\"tag " + (show.loop ? "pill-strong" : "") + "\">" + (show.loop ? "Loop" : "One-shot") + "</span>",
+                        "    <span class=\"tag\">" + show.points.length + " stops</span>",
+                        "    <span class=\"tag\">" + frames.length + " frames</span>",
+                        "  </div>",
+                        "</button>"
+                    ].join("");
+                }).join("");
+            }
+
+            function transitionOptionsMarkup(selectedValue) {
+                return TRANSITION_OPTIONS.map((option) =>
+                    "<option value=\"" + option.value + "\"" + (option.value === selectedValue ? " selected" : "") + ">" +
+                    escapeHtml(option.label) +
+                    "</option>"
+                ).join("");
+            }
+
+            function renderEditor() {
+                const show = getSelectedShow();
+                if (!show) {
+                    dom.editorPanel.innerHTML = "<div class=\"empty-state\">No show selected.</div>";
+                    return;
+                }
+
+                dom.editorPanel.innerHTML = [
+                    "<div class=\"meta-grid\">",
+                    "  <label><span>Show Name</span><input type=\"text\" data-show-field=\"name\" value=\"" + escapeAttribute(show.name) + "\"></label>",
+                    "  <label><span>Enum Symbol</span><input type=\"text\" data-show-field=\"symbol\" value=\"" + escapeAttribute(show.symbol) + "\"></label>",
+                    "  <label class=\"full\">",
+                    "      <span>Playback</span>",
+                    "      <div class=\"show-notes\">",
+                    "          <div class=\"button-row\" style=\"justify-content:space-between;align-items:center;\">",
+                    "              <span>Use loop for effects that should repeat until another effect is sent.</span>",
+                    "              <label style=\"display:flex;grid:auto/auto auto;align-items:center;gap:10px;margin:0;\">",
+                    "                  <input type=\"checkbox\" data-show-field=\"loop\"" + (show.loop ? " checked" : "") + ">",
+                    "                  <span>Loop show</span>",
+                    "              </label>",
+                    "          </div>",
+                    "      </div>",
+                    "  </label>",
+                    "</div>",
+                    "<div class=\"button-row\" style=\"margin-bottom:18px;\">",
+                    "  <button type=\"button\" class=\"primary\" data-action=\"add-point\">Add Color Stop</button>",
+                    "  <button type=\"button\" data-action=\"mirror-points\">Mirror Tail</button>",
+                    "  <button type=\"button\" data-action=\"reverse-points\">Reverse</button>",
+                    "  <button type=\"button\" data-action=\"duplicate-show\">Duplicate Show</button>",
+                    "  <button type=\"button\" class=\"danger\" data-action=\"remove-show\">Remove Show</button>",
+                    "</div>",
+                    "<div class=\"show-notes\">",
+                    "  Each stop has a color and a hold time. The transition controls on that stop define how the editor travels to the next stop. Use <strong>Sine Breath</strong> or <strong>Ease In-Out</strong> with more steps for breathing-style motion.",
+                    "</div>",
+                    "<div class=\"points\">",
+                    show.points.map((point, index) => {
+                        const isLast = index === show.points.length - 1;
+                        return [
+                            "<article class=\"point-card\" data-point-id=\"" + point.id + "\">",
+                            "  <div class=\"point-header\">",
+                            "      <div class=\"point-title\">",
+                            "          <span class=\"swatch\" style=\"--swatch:" + normalizeHexColor(point.color) + ";\"></span>",
+                            "          <span>Stop " + (index + 1) + "</span>",
+                            "      </div>",
+                            "      <div class=\"button-row\">",
+                            "          <button type=\"button\" class=\"small ghost\" data-action=\"move-point-up\"" + (index === 0 ? " disabled" : "") + ">Up</button>",
+                            "          <button type=\"button\" class=\"small ghost\" data-action=\"move-point-down\"" + (isLast ? " disabled" : "") + ">Down</button>",
+                            "          <button type=\"button\" class=\"small\" data-action=\"duplicate-point\">Duplicate</button>",
+                            "          <button type=\"button\" class=\"small\" data-action=\"add-point-after\">Add After</button>",
+                            "          <button type=\"button\" class=\"small danger\" data-action=\"remove-point\"" + (show.points.length === 1 ? " disabled" : "") + ">Delete</button>",
+                            "      </div>",
+                            "  </div>",
+                            "  <div class=\"point-grid\">",
+                            "      <label><span>Color Picker</span><input type=\"color\" data-point-field=\"color\" value=\"" + normalizeHexColor(point.color) + "\"></label>",
+                            "      <label><span>Hex Color</span><input type=\"text\" data-point-field=\"color-text\" value=\"" + escapeAttribute(normalizeHexColor(point.color)) + "\" placeholder=\"#00ffff\"></label>",
+                            "      <label><span>Hold (ms)</span><input type=\"number\" min=\"0\" max=\"120000\" step=\"1\" data-point-field=\"holdMs\" value=\"" + point.holdMs + "\"></label>",
+                            "  </div>",
+                            isLast
+                                ? "  <div class=\"mini-help\">This is the last stop. On export, the show ends here unless the show itself is set to loop.</div>"
+                                : [
+                                    "  <div class=\"transition-block\">",
+                                    "      <div class=\"transition-title\">Transition To Stop " + (index + 2) + "</div>",
+                                    "      <div class=\"transition-grid\">",
+                                    "          <label><span>Mode</span><select data-point-field=\"transition-type\">" + transitionOptionsMarkup(point.transition.type) + "</select></label>",
+                                    "          <label><span>Total (ms)</span><input type=\"number\" min=\"0\" max=\"120000\" step=\"1\" data-point-field=\"transition-duration\" value=\"" + point.transition.durationMs + "\"></label>",
+                                    "          <label><span>Steps</span><input type=\"number\" min=\"1\" max=\"512\" step=\"1\" data-point-field=\"transition-steps\" value=\"" + point.transition.steps + "\"" + (point.transition.type === "instant" ? " disabled" : "") + "></label>",
+                                    "      </div>",
+                                    "      <div class=\"mini-help\">More steps give smoother gradients but produce more exported PWM frames.</div>",
+                                    "  </div>"
+                                ].join(""),
+                            "</article>"
+                        ].join("");
+                    }).join(""),
+                    "</div>"
+                ].join("");
+            }
+
+            function renderSummary(selectedShow, frames) {
+                const totalDuration = showDurationMs(frames);
+                const points = selectedShow ? selectedShow.points.length : 0;
+                const loopState = selectedShow && selectedShow.loop ? "Loop" : "One-shot";
+
+                dom.summaryGrid.innerHTML = [
+                    summaryCard("Stops", String(points)),
+                    summaryCard("Frames", String(frames.length)),
+                    summaryCard("Duration", totalDuration + " ms"),
+                    summaryCard("Playback", loopState),
+                    summaryCard("First Color", colorToHeaderHex(frames[0]?.color || "#000000")),
+                    summaryCard("Last Color", colorToHeaderHex(frames[frames.length - 1]?.color || "#000000"))
+                ].join("");
+            }
+
+            function summaryCard(label, value) {
+                return [
+                    "<div class=\"summary-card\">",
+                    "  <span class=\"summary-label\">" + escapeHtml(label) + "</span>",
+                    "  <span class=\"summary-value\">" + escapeHtml(value) + "</span>",
+                    "</div>"
+                ].join("");
+            }
+
+            function renderTimeline(frames) {
+                const totalDuration = showDurationMs(frames);
+                const fallbackWeight = frames.length ? 1 : 0;
+                dom.timeline.innerHTML = frames.length
+                    ? frames.map((frame) => {
+                        const weight = totalDuration > 0
+                            ? Math.max(frame.durationMs, 1)
+                            : fallbackWeight;
+                        return "<span class=\"timeline-segment\" style=\"--segment-weight:" + weight + ";--segment-color:" + frame.color + ";\"></span>";
+                    }).join("")
+                    : "<span class=\"timeline-segment\" style=\"--segment-weight:1;--segment-color:#000000;\"></span>";
+            }
+
+            function renderWarnings(selectedShow, frames) {
+                const warnings = getWarnings(selectedShow, frames);
+                dom.warnings.innerHTML = warnings.length
+                    ? warnings.map((warning) => "<div class=\"warning\">" + escapeHtml(warning) + "</div>").join("")
+                    : "<div class=\"show-notes\">No warnings for the current project.</div>";
+            }
+
+            function updatePreviewData(frames, loop) {
+                preview.frames = frames;
+                preview.totalDurationMs = showDurationMs(frames);
+                preview.loop = loop && preview.totalDurationMs > 0;
+                preview.elapsedMs = 0;
+                preview.lastTimestamp = 0;
+                dom.togglePreviewButton.textContent = preview.playing ? "Pause" : "Play";
+                applyPreviewFrame(getCurrentPreviewFrame());
+            }
+
+            function getCurrentPreviewFrame() {
+                if (!preview.frames.length) {
+                    return { color: "#000000", durationMs: 0 };
+                }
+
+                if (preview.totalDurationMs === 0) {
+                    return preview.frames[preview.frames.length - 1];
+                }
+
+                let time = preview.elapsedMs;
+                if (preview.loop) {
+                    time = time % preview.totalDurationMs;
+                } else {
+                    time = Math.min(time, preview.totalDurationMs);
+                }
+
+                let cursor = 0;
+                for (const frame of preview.frames) {
+                    cursor += frame.durationMs;
+                    if (time <= cursor) {
+                        return frame;
+                    }
+                }
+
+                return preview.frames[preview.frames.length - 1];
+            }
+
+            function applyPreviewFrame(frame) {
+                const color = normalizeHexColor(frame?.color || "#000000");
+                dom.previewRing.style.setProperty("--preview-color", color);
+                dom.previewRing.setAttribute("stroke", color);
+            }
+
+            function tickPreview(timestamp) {
+                if (!preview.lastTimestamp) {
+                    preview.lastTimestamp = timestamp;
+                }
+
+                if (preview.playing) {
+                    preview.elapsedMs += timestamp - preview.lastTimestamp;
+                    if (!preview.loop && preview.totalDurationMs > 0) {
+                        preview.elapsedMs = Math.min(preview.elapsedMs, preview.totalDurationMs);
+                    }
+                    applyPreviewFrame(getCurrentPreviewFrame());
+                }
+
+                preview.lastTimestamp = timestamp;
+                preview.rafId = requestAnimationFrame(tickPreview);
+            }
+
+            function refreshOutputs() {
+                const selectedShow = getSelectedShow();
+                const frames = selectedShow ? compileShow(selectedShow) : [];
+                dom.previewTitle.textContent = selectedShow ? selectedShow.name : "No show selected";
+                dom.previewSubtitle.textContent = selectedShow
+                    ? sanitizeSymbol(selectedShow.symbol, 0)
+                    : "Select or create a show to preview it.";
+
+                renderSummary(selectedShow, frames);
+                renderTimeline(frames);
+                renderWarnings(selectedShow, frames);
+                updatePreviewData(frames, selectedShow ? selectedShow.loop : false);
+            }
+
+            function renderAll() {
+                persistProject();
+                renderShowList();
+                renderEditor();
+                refreshOutputs();
+            }
+
+            function escapeHtml(value) {
+                return String(value)
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#39;");
+            }
+
+            function escapeAttribute(value) {
+                return escapeHtml(value);
+            }
+
+            function findPoint(show, pointId) {
+                return show.points.find((point) => point.id === pointId) || null;
+            }
+
+            function handleShowListClick(event) {
+                const button = event.target.closest("[data-action=\"select-show\"]");
+                if (!button) {
+                    return;
+                }
+                selectedShowId = button.dataset.showId;
+                renderAll();
+            }
+
+            function handleEditorInput(event) {
+                const target = event.target;
+                const show = getSelectedShow();
+                if (!show) {
+                    return;
+                }
+
+                if (target.dataset.showField === "name") {
+                    show.name = target.value.trim() || "Untitled Show";
+                    persistProject();
+                    renderShowList();
+                    refreshOutputs();
+                    return;
+                }
+
+                if (target.dataset.showField === "symbol") {
+                    show.symbol = target.value.trim() || "LIGHT_SHOW_CUSTOM";
+                    persistProject();
+                    renderShowList();
+                    refreshOutputs();
+                    return;
+                }
+
+                const pointCard = target.closest("[data-point-id]");
+                if (!pointCard) {
+                    return;
+                }
+
+                const point = findPoint(show, pointCard.dataset.pointId);
+                if (!point || !target.dataset.pointField) {
+                    return;
+                }
+
+                switch (target.dataset.pointField) {
+                    case "color":
+                        point.color = normalizeHexColor(target.value, point.color);
+                        break;
+                    case "holdMs":
+                        point.holdMs = clampInt(target.value, point.holdMs, 0, 120000);
+                        break;
+                    case "transition-duration":
+                        point.transition.durationMs = clampInt(target.value, point.transition.durationMs, 0, 120000);
+                        break;
+                    case "transition-steps":
+                        point.transition.steps = clampInt(target.value, point.transition.steps, 1, 512);
+                        break;
+                    default:
+                        return;
+                }
+
+                if (target.dataset.pointField === "color") {
+                    const swatch = pointCard.querySelector(".swatch");
+                    const colorText = pointCard.querySelector("input[data-point-field=\"color-text\"]");
+                    if (swatch) {
+                        swatch.style.setProperty("--swatch", point.color);
+                    }
+                    if (colorText) {
+                        colorText.value = point.color;
+                    }
+                }
+
+                persistProject();
+                renderShowList();
+                refreshOutputs();
+            }
+
+            function handleEditorClick(event) {
+                const actionButton = event.target.closest("[data-action]");
+                if (!actionButton) {
+                    return;
+                }
+
+                const action = actionButton.dataset.action;
+                const show = getSelectedShow();
+                if (!show) {
+                    return;
+                }
+
+                const pointCard = actionButton.closest("[data-point-id]");
+                const pointId = pointCard ? pointCard.dataset.pointId : null;
+                const pointIndex = pointId ? show.points.findIndex((point) => point.id === pointId) : -1;
+
+                if (action === "add-point") {
+                    show.points.push(createPoint("#ffffff", 0, createTransition("linear", 240, 12)));
+                    renderAll();
+                    return;
+                }
+
+                if (action === "duplicate-show") {
+                    const copy = clone(show);
+                    copy.id = uid("show");
+                    copy.name = show.name + " Copy";
+                    copy.points = copy.points.map((point) => ({
+                        ...point,
+                        id: uid("point")
+                    }));
+                    const showIndex = project.shows.findIndex((entry) => entry.id === show.id);
+                    project.shows.splice(showIndex + 1, 0, copy);
+                    selectedShowId = copy.id;
+                    renderAll();
+                    return;
+                }
+
+                if (action === "remove-show") {
+                    if (project.shows.length === 1) {
+                        alert("At least one show is required.");
+                        return;
+                    }
+                    project.shows = project.shows.filter((entry) => entry.id !== show.id);
+                    selectedShowId = project.shows[0] ? project.shows[0].id : null;
+                    renderAll();
+                    return;
+                }
+
+                if (action === "mirror-points") {
+                    const mirroredTail = show.points.slice(0, -1).reverse().map((point) => ({
+                        ...clone(point),
+                        id: uid("point")
+                    }));
+                    show.points = show.points.concat(mirroredTail);
+                    renderAll();
+                    return;
+                }
+
+                if (action === "reverse-points") {
+                    show.points.reverse();
+                    renderAll();
+                    return;
+                }
+
+                if (pointIndex === -1) {
+                    return;
+                }
+
+                if (action === "move-point-up" && pointIndex > 0) {
+                    const temp = show.points[pointIndex - 1];
+                    show.points[pointIndex - 1] = show.points[pointIndex];
+                    show.points[pointIndex] = temp;
+                    renderAll();
+                    return;
+                }
+
+                if (action === "move-point-down" && pointIndex < show.points.length - 1) {
+                    const temp = show.points[pointIndex + 1];
+                    show.points[pointIndex + 1] = show.points[pointIndex];
+                    show.points[pointIndex] = temp;
+                    renderAll();
+                    return;
+                }
+
+                if (action === "duplicate-point") {
+                    const copy = clone(show.points[pointIndex]);
+                    copy.id = uid("point");
+                    show.points.splice(pointIndex + 1, 0, copy);
+                    renderAll();
+                    return;
+                }
+
+                if (action === "add-point-after") {
+                    const sourcePoint = show.points[pointIndex];
+                    show.points.splice(pointIndex + 1, 0, createPoint(sourcePoint.color, 0, createTransition("linear", 240, 12)));
+                    renderAll();
+                    return;
+                }
+
+                if (action === "remove-point") {
+                    if (show.points.length === 1) {
+                        alert("A show must keep at least one color stop.");
+                        return;
+                    }
+                    show.points.splice(pointIndex, 1);
+                    renderAll();
+                }
+            }
+
+            function handleEditorChange(event) {
+                const target = event.target;
+                const show = getSelectedShow();
+                if (!show) {
+                    return;
+                }
+
+                if (target.dataset.showField) {
+                    if (target.dataset.showField === "name") {
+                        show.name = target.value.trim() || "Untitled Show";
+                    }
+                    if (target.dataset.showField === "symbol") {
+                        show.symbol = target.value.trim() || "LIGHT_SHOW_CUSTOM";
+                    }
+                    if (target.dataset.showField === "loop") {
+                        show.loop = Boolean(target.checked);
+                    }
+                    persistProject();
+                    renderShowList();
+                    refreshOutputs();
+                    return;
+                }
+
+                const pointCard = target.closest("[data-point-id]");
+                if (!pointCard) {
+                    return;
+                }
+
+                const point = findPoint(show, pointCard.dataset.pointId);
+                if (!point || !target.dataset.pointField) {
+                    return;
+                }
+
+                switch (target.dataset.pointField) {
+                    case "color":
+                        point.color = normalizeHexColor(target.value, point.color);
+                        break;
+                    case "color-text":
+                        point.color = normalizeHexColor(target.value, point.color);
+                        break;
+                    case "holdMs":
+                        point.holdMs = clampInt(target.value, point.holdMs, 0, 120000);
+                        break;
+                    case "transition-type":
+                        point.transition.type = target.value;
+                        if (target.value === "instant") {
+                            point.transition.steps = 1;
+                        }
+                        break;
+                    case "transition-duration":
+                        point.transition.durationMs = clampInt(target.value, point.transition.durationMs, 0, 120000);
+                        break;
+                    case "transition-steps":
+                        point.transition.steps = clampInt(target.value, point.transition.steps, 1, 512);
+                        break;
+                    default:
+                        break;
+                }
+
+                persistProject();
+                renderEditor();
+                refreshOutputs();
+            }
+
+            function addShow() {
+                const index = project.shows.length;
+                const newShow = createShow(
+                    "New Show " + (index + 1),
+                    "LIGHT_SHOW_CUSTOM_" + (index + 1),
+                    false,
+                    [createPoint("#00ffff", 0, createTransition("linear", 240, 12))]
+                );
+                project.shows.push(newShow);
+                selectedShowId = newShow.id;
+                renderAll();
+            }
+
+            function resetProject() {
+                if (!window.confirm("Reset the editor back to the default show set?")) {
+                    return;
+                }
+                project = createDefaultProject();
+                selectedShowId = project.shows[0] ? project.shows[0].id : null;
+                preview.playing = true;
+                renderAll();
+            }
+
+            function loadJsonFile(file) {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    try {
+                        const parsed = JSON.parse(String(reader.result || ""));
+                        project = normalizeProject(parsed);
+                        selectedShowId = project.shows[0] ? project.shows[0].id : null;
+                        preview.playing = true;
+                        renderAll();
+                    } catch (error) {
+                        alert("Could not load JSON: " + error.message);
+                    }
+                };
+                reader.readAsText(file);
+            }
+
+            dom.showList.addEventListener("click", handleShowListClick);
+            dom.editorPanel.addEventListener("click", handleEditorClick);
+            dom.editorPanel.addEventListener("input", handleEditorInput);
+            dom.editorPanel.addEventListener("change", handleEditorChange);
+
+            dom.addShowButton.addEventListener("click", addShow);
+            dom.downloadJsonButton.addEventListener("click", () => {
+                downloadText("pwm_led_shows.json", generateProjectJson());
+            });
+            dom.downloadHeaderButton.addEventListener("click", () => {
+                downloadText("pwm_led_shows.h", generateHeaderContent());
+            });
+            dom.resetProjectButton.addEventListener("click", resetProject);
+
+            dom.togglePreviewButton.addEventListener("click", () => {
+                preview.playing = !preview.playing;
+                dom.togglePreviewButton.textContent = preview.playing ? "Pause" : "Play";
+                preview.lastTimestamp = 0;
+            });
+
+            dom.restartPreviewButton.addEventListener("click", () => {
+                preview.elapsedMs = 0;
+                preview.lastTimestamp = 0;
+                preview.playing = true;
+                dom.togglePreviewButton.textContent = "Pause";
+                applyPreviewFrame(getCurrentPreviewFrame());
+            });
+
+            dom.jsonLoader.addEventListener("change", (event) => {
+                const file = event.target.files && event.target.files[0];
+                if (file) {
+                    loadJsonFile(file);
+                }
+                event.target.value = "";
+            });
+
+            renderAll();
+            preview.rafId = requestAnimationFrame(tickPreview);
+        })();
+    </script>
+</body>
+</html>

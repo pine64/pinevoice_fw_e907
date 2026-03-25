@@ -1,0 +1,239 @@
+
+## 第一部分： 基础信息
+name: pinevoice_fw_e907                              # <必选项> 包名称 （符合C语言变量命名规则），长度少于等于64字节
+version: develop                                    # <必选项> 组件版本号
+description: 智能语音终端                            # <必选项> 建议至少20字以上
+type: solution                                      # <必选项> 组件类型，为：solution, chip, board, common, sdk
+
+## 第二部分：依赖信息
+#           指定该组件依赖的组件及版本，版本支持条件比较，支持：>=v1.0, >v1.0, ==v1.0, <=v1.0, <v1.0, v1.0
+#           未指定条件时，默认为 ==，如 v1.0 与 ==v1.0
+# depends:                                 # <可选项> 该组件依赖其他的组件，合理的依赖才能保证组件能编译、使用
+#   - minilibc: v7.2.0
+#   - aos: >=v7.2.0
+mkflash_script: mkflash.sh
+
+depends:
+  - sdk_chip_bl606p_e907: v7.5.y
+  - bl606p_pinevoice_e907: v7.5.y
+  # - amrnb: v7.5.y
+  # - amrwb: v7.5.y
+  # - flac: v7.5.y
+  - ogg: v7.5.y
+  - opus: v7.5.y
+  - pvmp3dec: v7.5.y
+  - sonic: v7.5.y
+  - speex: v7.5.y
+  - speexdsp: v7.5.y
+  # - vorbis: develop
+  - lwip: v7.5.y
+  - netmgr: v7.5.y
+  - libxml2: v7.5.y
+  - drv_wifi_bl606p: v7.5.y
+  - littlefs: v7.6.y
+  - zlib: v7.5.y
+  - ntp: v7.5.y
+  - smart_audio: v7.5.y
+  - drv_amplifier: v7.5.y
+  - cjson: v7.5.y
+  - alg_pcm_input: v7.5.y
+  - alg_record: v7.5.y
+  - xrecord: v7.5.y
+  - websocket: v7.5.y
+  - posto: v7.5.y
+  - cxvision: v7.5.y
+  - voice_wrapper: v7.5.y
+  - httpclient: v7.5.y
+  - transport: v7.5.y
+  - button: v7.5.y
+  - alg_dispatch: v7.5.y         # alg: mind & thead
+  - voice_mind: v7.5.y           # alg: mind
+  - xav: v7.5.y
+  # - aacdec: v0.2.y
+  - adb: v7.5.y
+  - clock_alarm: develop
+  - xcodec: develop
+  - xport: v7.5.y
+  - xutils: v7.5.y
+  - multicore_driver: develop
+  - wyoming_c_satellite: develop
+
+## 第三部分：板级信息
+# hw_info:                                 # 对 solution、board、chip 三个字段的改进，统称为 hw_info 字段
+#   cpu_id: cpu0
+#   cpu_name: CK804EF
+#   vendor_name: t-head
+#   chip_name: chip_pangu                  # <可选项> 指定芯片组件名,未设置时，使用depends中 chip 第一个组件
+#   board_name: pangu_cpu0_evb             # <可选项> 指定开发板组件名，未设置时，使用depends中 board 第一个组件
+#   ld_script: configs/gcc_eflash.ld       # <可选项> 连接时使用 LD 脚本，当选把未设置时，使用对应的 board 的 LD 脚本
+#   flash_program: bin/flash_program.elf   # <可选项> 芯片全局烧写程序
+#   toolchain_prefix: csky-abiv2-elf       # <可选项> 编译器前缀
+#   cpu0:
+#     cpu_name: CK804EF                    # <必选项> 该芯片使用的 CPU 型号
+#     ld_script: configs/gcc_eflash.ld     # <必选项> 连接时使用 LD 脚本
+#     flash_program: bin/flash_program.elf # <可选项> 该CPU对应烧写程序，未指定时使用全局烧写程序
+#     toolchain_prefix: csky-abiv2-elf     # <可选项> 编译器前缀
+#   cpu1:
+#     cpu_name: CK804EF                    # <必选项> 该芯片使用的 CPU 型号
+#     ld_script: configs/gcc_eflash.ld     # <可选项> 连接时使用 LD 脚本
+#     flash_program: bin/flash_program.elf # <可选项> 该CPU对应烧写程序，未指定时使用全局烧写程序
+#     toolchain_prefix: csky-abiv2-elf     # <可选项> 编译器前缀
+## solution component
+# hw_info:
+#   cpu_id: cpu0
+#   board_name: pangu_cpu0_evb
+#   cpu_name: CK805EF
+#   vendor_name: thead
+#   chip_name: 'chip_pangu'
+#   ld_script: configs/gcc_eflash.ld.S
+
+## board component
+# hw_info:
+#   chip_name: chip_pangu
+#   ld_script: configs/gcc_eflash.ld
+
+## chip component (单处理器)
+# hw_info:
+#   cpu_name: CK804EF
+#   ld_script: configs/gcc_eflash.ld
+#   toolchain_prefix: csky-abiv2-elf
+#   flash_program: bin/flash_program.elf
+
+## chip component(多处理器)
+# hw_info:
+#   cpu0:
+#     cpu_name: CK804EF                    # <必选项> 该芯片使用的 CPU 型号
+#     ld_script: configs/gcc_eflash.ld     # <必选项> 连接时使用 LD 脚本
+#     flash_program: bin/flash_program.elf # <可选项> 该CPU对应烧写程序，未指定时使用全局烧写程序
+#     toolchain_prefix: csky-abiv2-elf     # <可选项> 编译器前缀
+#   cpu1:
+#     cpu_name: CK804EF                    # <必选项> 该芯片使用的 CPU 型号
+#     ld_script: configs/gcc_eflash.ld     # <必选项> 连接时使用 LD 脚本
+#     flash_program: bin/flash_program.elf # <可选项> 该CPU对应烧写程序，未指定时使用全局烧写程序
+#     toolchain_prefix: csky-abiv2-elf     # <可选项> 编译器前缀
+
+hw_info:
+  cpu_id: cpu1
+  cpu_name: e907fp
+  board_name: bl606p_pinevoice_e907
+
+## 第四部分：编译连接信息
+# build_config:                            # <可选项> 编译配置项
+#   include:                               # <可选项> 编译时，影响编译器的-I 参数 ,全局有效
+#     - src                                #        include 只能是该软件包下的目录，不能使用外部目录
+#   internal_include:                      # <可选项> 编译时，影响编译器的-I 参数 ,组件内有效
+#     - include
+#   cflag: ''                              # <可选项> C 编译器所需要要的编译参数
+#   cxxflag: ''                            # <可选项> CXX 编译器所需要要的编译参数
+#   asmflag: ''                            # <可选项> 汇编器所需要要参数
+#   define:                                # <可选项> 宏定义, 增加编译器的-D 选项,如：
+#     XXX: 1                               #   -DXXX=1
+#     AAA: 1                               #   -DAAA
+#     STR: "abc"                           #   -DSTR="abc"
+#   libs:                                  # 该组件中支持的二进制静态库,如：libxxx.a, libyyy.a
+#     - xxx                                #   -lxxx
+#     - yyy                                #   -lyyy
+#   libpath:                               # 指定静态库所在的路径（相对于该组件路径）
+#     - libs                               #   -Llibs
+build_config:
+  cflag: -Os -Dprintf=printk -Dputs=putsk
+  cxxflag: -Os # -fexceptions
+  include:
+    - app/src
+    - app/board
+  ldflag: '-Wl,-zmax-page-size=1024 -Wl,-Map=yoc.map'
+# source_file:                             # <可选项> 指定参与编译的源代码文件，支持通配符，采用相对路径
+#   - src/*.c                              # 例：组件 src 目录下所有的扩展名为 c 的源代码文件
+source_file:
+  - app/board/bl606p/*.c
+  - app/src/*.c
+  - app/src/cli/*.c
+  - app/src/player/*.c
+  - app/src/sys/*.c
+  - app/src/wifi/*.c
+  - app/src/wifi/wifi_drv/bl606p_init.c
+  - app/src/wifi/multi_ssid/*.c
+  - app/src/key_msg/*.c
+  - app/src/event_mgr/*.c
+  - app/src/display/pwm_led/*.c
+  - app/src/factory/*.c
+  - app/src/wyoming/*.c
+  - app/src/improv/*.c
+  # - app/src/bt/*.c
+
+
+## 第五部分：配置信息
+def_config:                              # 组件的可配置项
+    __YOC__: 1  #cxvision
+    CONFIG_DEBUG: 1
+    CONFIG_DEBUG_MM: 1
+    CONFIG_SOFTWDT: 1
+    CONFIG_BLOS_LOG_ENABLE: 1
+    # CONFIG_DEBUG_UTASK: 1
+    CONFIG_SOFTWDT_TASK_STACK_SIZE: 2048
+    CLI_CONFIG_STACK_SIZE: 32768
+    CLI_TASK_PRIORITY: 5
+    CONFIG_USERVICE_EVENT_TASK_STACK_SIZE: 4096
+    CONFIG_IPC_RECV_TASK_STACK_SIZE: 4096
+    CONFIG_IPC_SERVICE_TASK_STACK_SIZE: 6144
+    CONFIG_ARCH_INTERRUPTSTACK: 8192
+    CONFIG_SMART_AUDIO_STACK_SIZE: 3072
+    ULOG_CONFIG_ASYNC: 1   # ulog异步配置项，1表示开启异步打印，0表示同步打印
+    ULOG_CONFIG_SYNC_LOG_DETAILS: 1
+    ULOG_CONFIG_DEFAULT_DIR_ASYNC: 1
+    ULOG_CONFIG_ASYNC_BUF_SIZE: 81920
+    ULOG_CONFIG_LOG_SIZE: 1024
+    CONFIG_STANDALONE_NVRAM: 1
+    CONFIG_HAL_UART_RINGBUF_LEN: 2048
+    CONFIG_AEFXER_SONA: 0
+    CONFIG_ENABLE_BOTTOM_PA: 1
+    CONFIG_AUDIO_PA_PIN: 16
+    CONFIG_BOARD_AUDIO: 1
+    CONFIG_BOARD_BUTTON: 1
+    POSTO_AMP_NUM_CPUS: 2
+    CONFIG_LOG_IPC_CLIENT: 1
+    CONFIG_KERNEL_TIMER_STACK_SIZE: 4096
+    CONFIG_BT_RAMBTDUMP_DEBUG: 0
+    CONFIG_AUDIO_DAC_DISABLE: 1
+    SHOW_PART_INFO_EN: 1
+    # app define
+    CONFIG_WIFI_NET: 1
+    CONFIG_BT_ENABLE: 1
+    CONFIG_LOG_BAUD: 2000000
+    #CONFIG_USE_LOG_IPC: 1
+
+    # av resample config
+    CONFIG_RESAMPLER_SPEEX: 1
+    CONFIG_RESAMPLER_IPC: 0
+
+    # av decoder config
+    CONFIG_DECODER_ALAW: 0
+    CONFIG_DECODER_AMRNB: 0
+    CONFIG_DECODER_AMRWB: 0
+    CONFIG_DECODER_PCM: 1
+    CONFIG_DECODER_OPUS: 1
+    CONFIG_DECODER_VORBIS: 0
+    #CONFIG_DECODER_FAAD: 0
+    CONFIG_DECODER_AAC : 0
+    CONFIG_DECODER_MULAW: 0
+    CONFIG_DECODER_PVMP3: 1
+    CONFIG_DECODER_SPEEX: 1
+    CONFIG_DECODER_ADPCM_MS: 0
+    CONFIG_DECODER_FLAC: 0
+    CONFIG_DECODER_IPC: 0
+    CONDIF_CLI_DISABLE_READ: 0
+
+## 第六部分：安装信息
+# install:
+#   - dest: include/                       # 安装的目的路径 dest是相当路径，通常是相对于YoC SDK 安装目录
+#     source:                              # 安装源列表
+#      - src/*.h                           # 支持通配符，相对路径
+
+## 第七部分：导出部分
+# export:
+#   - dest: "<SOLUTION_PATH>/generated/data" # 安装的目的路径 dest是相当路径
+#     source:                                # 安装源列表
+#       - "bootimgs/boot"
+#       - "bootimgs/tee"
+#       - "bootimgs/mtb"
+#       - "configs/config.yaml"
