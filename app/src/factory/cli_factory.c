@@ -70,6 +70,17 @@ void fct_step(int step, int argc, char **argv)
             if (argc < 4) return;
             fct_speaker_mic_test(atoi(argv[3]));
             break;
+        case 3: {
+            static bool cdc_enabled = false;
+            if (cdc_enabled) return;
+            cdc_enabled = true;
+            extern void cdc_init(void);
+            usb_clock_init();
+            cdc_init();
+
+            usbd_initialize();
+            break;
+        }
     }
 }
 
