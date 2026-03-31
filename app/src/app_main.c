@@ -93,7 +93,7 @@ int smartspeaker_main(int argc, char *argv[])
     app_sys_init();
 
     // test();
-    app_sys_set_boot_reason_cache(BOOT_REASON_FACTORY_MODE);
+    // app_sys_set_boot_reason_cache(BOOT_REASON_FACTORY_MODE);
 
     app_cli_init();
 
