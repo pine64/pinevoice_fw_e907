@@ -36,8 +36,13 @@ static void mic_evt_cb(int source, mic_event_id_t evt_id, void *data, int size) 
     case MIC_EVENT_SESSION_START: {
       LOGD("haw", "WAKE UP!!!");
       int32_t ret = wsat_wake_detection();
-      if (ret == -WSAT_ERROR_SAT_DISCONNECTED) {
-        light_show_state_msg_send(LIGHT_SHOW_NET_DISCONNECTED, NULL);
+      if (!app_network_internet_is_connected() || ret == -WSAT_ERROR_SAT_DISCONNECTED) {
+        if (!app_network_internet_is_connected()) {
+          local_audio_play("wifi-is-disconnected.opus");
+        } else {
+          local_audio_play("wsat-is-disconnected.opus");
+        }
+        light_show_state_msg_send(LIGHT_SHOW_ERROR, NULL);
       }
       break;
     }

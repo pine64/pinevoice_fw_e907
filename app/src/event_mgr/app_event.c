@@ -71,7 +71,7 @@ static void app_event_mgr(uint32_t event_id, const void *data, void *context)
             /*系统*/
         case EVENT_STATUS_STARTING:
             if(BL_RST_POWER_OFF == bl_sys_rstinfo_get_ext())
-                local_audio_play("sys_starting_en.mp3");
+                // TODO: local_audio_play("sys_starting_en.mp3");
             break;
         case EVENT_KEY_PRESSED:
             // TODO: REMOVE app_display_show(DISP_SHOW_KEYPRESS);
@@ -81,24 +81,24 @@ static void app_event_mgr(uint32_t event_id, const void *data, void *context)
 
             /*配网*/
         case EVENT_STATUS_WIFI_PROV_START:
-            light_show_state_msg_send(LIGHT_SHOW_NET_DISCONNECTED, NULL);
-            local_audio_play("wifiprov_start_en.mp3");
+            // light_show_state_msg_send(LIGHT_SHOW_NET_DISCONNECTED, NULL);
+            // TODO: local_audio_play("wifiprov_start_en.mp3");
             break;
         case EVENT_STATUS_WIFI_PROV_ALREADY_START:
-            light_show_state_msg_send(LIGHT_SHOW_NET_DISCONNECTED, NULL);
-            local_audio_play("wifiprov_already_start.mp3");
+            // light_show_state_msg_send(LIGHT_SHOW_NET_DISCONNECTED, NULL);
+            // TODO: local_audio_play("wifiprov_already_start.mp3");
             break;
         case EVENT_STATUS_WIFI_PROV_TIMEOUT:
-            light_show_state_msg_send(LIGHT_SHOW_NET_DISCONNECTED, NULL);
-            local_audio_play("wifiprov_timeout_en.mp3");
+            // light_show_state_msg_send(LIGHT_SHOW_NET_DISCONNECTED, NULL);
+            // TODO: local_audio_play("wifiprov_timeout_en.mp3");
             break;
         case EVENT_STATUS_WIFI_PROV_FAILED:
-            light_show_state_msg_send(LIGHT_SHOW_NET_DISCONNECTED, NULL);
-            local_audio_play("wifiprov_timeout_en.mp3");
+            // light_show_state_msg_send(LIGHT_SHOW_NET_DISCONNECTED, NULL);
+            // TODO: local_audio_play("wifiprov_timeout_en.mp3");
             break;
         case EVENT_STATUS_WIFI_PROV_RECVED:
-            light_show_state_msg_send(LIGHT_SHOW_NET_DISCONNECTED, NULL);
-            local_audio_play("wifiprov_recved_en.mp3");
+            // light_show_state_msg_send(LIGHT_SHOW_NET_DISCONNECTED, NULL);
+            // TODO: local_audio_play("wifiprov_recved_en.mp3");
             break;
 
             /*网络连接*/
@@ -107,26 +107,26 @@ static void app_event_mgr(uint32_t event_id, const void *data, void *context)
         case EVENT_STATUS_WIFI_CONN_FAILED:
             if(BL_RST_POWER_OFF == bl_sys_rstinfo_get_ext())
             {
-                light_show_state_msg_send(LIGHT_SHOW_NET_DISCONNECTED, NULL);
-                local_audio_play("wifi_conn_fail_en.mp3");
+                // light_show_state_msg_send(LIGHT_SHOW_NET_DISCONNECTED, NULL);
+                // TODO: local_audio_play("wifi_conn_fail_en.mp3");
             }
             break;
         case EVENT_STATUS_NTP_SUCCESS:
             if(BL_RST_POWER_OFF == bl_sys_rstinfo_get_ext())
             {
-                light_show_state_msg_send(LIGHT_SHOW_NET_CONNECTED, NULL);
-                local_audio_play("wifi_conn_succ_en.mp3");
+                // light_show_state_msg_send(LIGHT_SHOW_NET_CONNECTED, NULL);
+                // TODO: local_audio_play("wifi_conn_succ_en.mp3");
             }
             break;
 
             /*蓝牙*/
         case EVENT_STATUS_BT_CONNECTED:
-            local_audio_play("bt_connected.mp3");
+            // TODO: local_audio_play("bt_connected.mp3");
             // ad2p断开是否启动广播
             //app_bt_adv_enable(1);
             break;
         case EVENT_STATUS_BT_DISCONNECTED:
-            local_audio_play("bt_disconnected.mp3");
+            // TODO: local_audio_play("bt_disconnected.mp3");
             break;
 
             /*唤醒*/
@@ -140,29 +140,32 @@ static void app_event_mgr(uint32_t event_id, const void *data, void *context)
 
             /*交互*/
         case EVENT_STATUS_NLP_NOTHING:
-            local_audio_play("npl_nothing.mp3");
+            // TODO: local_audio_play("npl_nothing.mp3");
             break;
         case EVENT_STATUS_NLP_UNKNOWN:
-            local_audio_play("npl_unknown.mp3");
+            // TODO: local_audio_play("npl_unknown.mp3");
             break;
 
             /*播放器*/
         case EVENT_MEDIA_START:
             break;
         case EVENT_MEDIA_SYSTEM_START:
-            light_show_state_msg_send(LIGHT_SHOW_TALKING_ACTIVE, NULL);
+            // LOGD(TAG, "T2");
+            // light_show_state_msg_send(LIGHT_SHOW_TALKING_ACTIVE, NULL);
             break;
         case EVENT_MEDIA_MUSIC_FINISH:
-            event_publish_delay(EVENT_PLAYER_CHANGE, NULL, 500);
+            // LOGD(TAG, "T3");
+            // event_publish_delay(EVENT_PLAYER_CHANGE, NULL, 500);
             break;
         case EVENT_MEDIA_SYSTEM_FINISH:
-            if (g_notify_play_status) {
-                LOGD(TAG, "play time %d ms", (int)(aos_now_ms() - g_notify_play_status));
-                aui_mic_control(MIC_CTRL_NOTIFY_PLAYER_STATUS, 0, 200);
-                g_notify_play_status = 0;
-            }
-            light_show_state_msg_send(LIGHT_SHOW_TALKING_STOP, NULL);
-            event_publish_delay(EVENT_PLAYER_CHANGE, NULL, 500);
+            // LOGD(TAG, "T4");
+            // if (g_notify_play_status) {
+            //     LOGD(TAG, "play time %d ms", (int)(aos_now_ms() - g_notify_play_status));
+            //     aui_mic_control(MIC_CTRL_NOTIFY_PLAYER_STATUS, 0, 200);
+            //     g_notify_play_status = 0;
+            // }
+            // light_show_state_msg_send(LIGHT_SHOW_TALKING_STOP, NULL);
+            // event_publish_delay(EVENT_PLAYER_CHANGE, NULL, 500);
             break;
         case EVENT_MEDIA_MUSIC_ERROR:
             break;

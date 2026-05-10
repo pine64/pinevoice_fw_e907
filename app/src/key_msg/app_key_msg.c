@@ -44,7 +44,7 @@ __attribute__(( weak )) int smartspeak_key_key_msg_play_pressed(void)
         aui_mic_control(MIC_CTRL_START_PCM); 
     }else{
         light_show_state_msg_send(LIGHT_SHOW_NET_UNAUTH, NULL);
-        local_audio_play("network_not_connected_en.mp3");
+        // TODO: local_audio_play("network_not_connected_en.mp3");
     }
     return 0;
 }
@@ -139,8 +139,14 @@ static void key_msg_proc_task(void *arg)
 #else
                 LOGD("zz", "center pressedd");
                 int32_t ret = wsat_wake_detection();
-                if (ret == -WSAT_ERROR_SAT_DISCONNECTED) {
-                    light_show_state_msg_send(LIGHT_SHOW_NET_DISCONNECTED, NULL);
+                
+                if (!app_network_internet_is_connected() || ret == -WSAT_ERROR_SAT_DISCONNECTED) {
+                    if (!app_network_internet_is_connected()) {
+                        local_audio_play("wifi-is-disconnected.opus");
+                    } else {
+                        local_audio_play("wsat-is-disconnected.opus");
+                    }
+                    light_show_state_msg_send(LIGHT_SHOW_ERROR, NULL);
                 }
                 // smartspeak_key_key_msg_play_pressed();
 #endif

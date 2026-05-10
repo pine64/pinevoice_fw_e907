@@ -207,6 +207,7 @@ static void handle_wifi_res_cb(uint32_t event_id, const void *param, void *conte
       app_event_update(EVENT_STATUS_WIFI_PROV_RECVED);
       app_wifi_config_save();
       light_show_state_msg_send(LIGHT_SHOW_TALKING_STOP, NULL);
+      local_audio_play("wifi-provisioning-success.opus");
 
       break;
     }
@@ -215,6 +216,7 @@ static void handle_wifi_res_cb(uint32_t event_id, const void *param, void *conte
         improv_set_error(IMPROV_ERROR_UNABLE_TO_CONNECT);
         improv_set_state(IMPROV_STATE_AUTHORIZED);
         app_event_update(EVENT_STATUS_WIFI_PROV_FAILED);
+        local_audio_play("wifi-provisioning-failed.opus");
         app_wifi_stop();
         app_wifi_config_del(app_wifi_config_get_cur_ssid());
       }
@@ -486,7 +488,7 @@ int improv_start(uint32_t timeout_s) {
   prov_state.timeout = timeout_s;
   ret = start_adv();
   light_show_state_msg_send(LIGHT_SHOW_NET_UNAUTH, NULL);
-
+  local_audio_play("wifi-provisioning-started.opus");
 
   // TODO: Timeout
   return ret;
