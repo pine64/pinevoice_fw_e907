@@ -11,30 +11,20 @@
 #include "../display/pwm_led/pwm_led.h"
 #include "wyoming.h"
 
-#if 0
-static uint8_t audio_data[320*20];
-#else
 #define AUD_SAMP_CNT 5
 static uint8_t audio_data[2][320*AUD_SAMP_CNT];
 static uint8_t audio_data_sel = 0;
-#endif
 static aos_sem_t audio_sem; 
 static uint8_t buffers_cnt = 0;
 static uint8_t data_ready = 0;
 
-// extern int mwd_state;
-// extern int ps_state;
-// extern int r_state;
-int mwd_state = 0;
-int ps_state = 0;
-int r_state = 0;
 
 
 static void mic_evt_cb(int source, mic_event_id_t evt_id, void *data, int size) {
   static uint32_t i = 0;
   switch (evt_id) {
     case MIC_EVENT_SESSION_START: {
-      LOGD("haw", "WAKE UP!!!");
+      LOGD("wyoming", "WAKE UP!!!");
       int32_t ret = wsat_wake_detection();
       if (!app_network_internet_is_connected() || ret == -WSAT_ERROR_SAT_DISCONNECTED) {
         if (!app_network_internet_is_connected()) {
@@ -52,23 +42,13 @@ static void mic_evt_cb(int source, mic_event_id_t evt_id, void *data, int size) 
       buffers_cnt++;
       if (buffers_cnt >= AUD_SAMP_CNT) {
         if (data_ready) {
-          LOGE("haw", "Data not processed mwd: %d, ps: %d, r: %d!!!!", mwd_state, ps_state, r_state);
+          LOGE("wyoming", "Data not processed");
         }
         buffers_cnt = 0;
         audio_data_sel = audio_data_sel ? 0 : 1;
         data_ready = 1;
         aos_sem_signal(&audio_sem);
       }
-      // memcpy(audio_data + (320 * buffers_cnt), data, size);
-      // buffers_cnt++;
-      // if (buffers_cnt == 20) {
-      //   wsat_mic_write_data(audio_data, sizeof(audio_data));
-      //   buffers_cnt = 0;
-      // }
-      // wsat_mic_write_data(data, size);
-      // if (i++ % 32 == 0) {
-      //   LOGD("haw", "Got microphone shit: %d, s: %d", i, size);
-      // }
       break;
     }
   }
@@ -103,14 +83,14 @@ static int32_t mic_init()
   aos_task_t task_handle;
   aos_task_new_ext(&task_handle, "mic_streamer", mic_streamer_fn, (void *)NULL, 4096, AOS_DEFAULT_APP_PRI);
 
-  LOGI("haw", "MIC_CTRL_START_PCM");
+  LOGI("wyoming", "MIC_CTRL_START_PCM");
   aui_mic_control(MIC_CTRL_START_PCM);
   return 0;
 }
 
 static int32_t mic_destroy()
 {
-  LOGI("haw", "MIC_CTRL_STOP_PCM");
+  LOGI("wyoming", "MIC_CTRL_STOP_PCM");
   aui_mic_control(MIC_CTRL_STOP_PCM);
   return 0;
 }
@@ -130,8 +110,6 @@ struct wsat_microphone mic = {
 
 static nsfifo_t* g_playback_fifo;
 static player_t* g_player;
-// TODO: Make FIFO adjustable
-#define FIFO_TTS_ADAM "fifo://ha_tts?avformat=rawaudio&avcodec=pcm_s16le&channel=1&rate=22050"
 
 static void _player_event(player_t *player, uint8_t type, const void *data, uint32_t len)
 {
@@ -162,13 +140,16 @@ static int32_t snd_start_stream(uint32_t rate, uint8_t width, uint8_t channels)
 {
   // TODO: Check if FIFO is opened or not.
 
-  g_playback_fifo = nsfifo_open(FIFO_TTS_ADAM, O_CREAT, 1*1024*1024);
+  char fifo_tts_url[128];
+  snprintf(fifo_tts_url, sizeof(fifo_tts_url), "fifo://wyo_tts?avformat=rawaudio&avcodec=pcm_s16le&channel=1&rate=%d", rate);
+
+  g_playback_fifo = nsfifo_open(fifo_tts_url, O_CREAT, 1*1024*1024);
   if (NULL == g_playback_fifo) {
     LOGE("wyoming", "nsfifo_open fail");
     return;
   }
 
-  player_play(g_player, FIFO_TTS_ADAM, 0);
+  player_play(g_player, fifo_tts_url, 0);
   LOGD("wyo", "Start stream %d", rate);
   return 0;
 }
