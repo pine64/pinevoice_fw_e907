@@ -13,8 +13,8 @@ static int _cmd_data_generate(int32_t argc, char **argv, char *data)
     int len = 0;
 
     for (int i = 2; i < argc; i++) {
-        snprintf(&data[len], IPC_CMD_LEN, " %s", argv[i]);
-        len += strlen(data);
+        snprintf(&data[len], IPC_CMD_LEN, " %s", argv[i]); // TODO: Eugh, overflow...
+        len += 1 + strlen(argv[i]);
     }
 
     data[len] = '\r';

@@ -59,7 +59,7 @@ static void sys_fs_init()
         km_init();
 #endif
     }
-    //vfs_ifs_server_init();
+    vfs_ifs_server_init();
 }
 
 void app_sys_reboot(int reason)
