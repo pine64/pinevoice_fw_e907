@@ -51,7 +51,10 @@ static void key_msg_proc_task(void *arg)
     while (1) {
         aos_queue_recv(&s_queue, AOS_WAIT_FOREVER, &keymsg_id, &len);
         app_event_update(EVENT_KEY_PRESSED);
-        if (app_sys_get_boot_reason() == BOOT_REASON_FACTORY_MODE) return;
+        if (app_sys_get_boot_reason() == BOOT_REASON_FACTORY_MODE) {
+            LOGI(TAG, "keymsg_id=%d\n", keymsg_id); 
+            continue;
+        }
 
         switch (keymsg_id) {
             case KEY_MSG_VOL_UP_0:
