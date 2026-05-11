@@ -65,7 +65,7 @@ make -j${CPU_NUM}
 #/usr/bin/python2 ../../tools/map_parse_gcc_riscv_e907.py ./yoc.map
 #cp app/version.h ../../flash_tool/version
 
-if [ ! -f "../../tools/flashtool/yoc.bin" ];then
+if [ ! -f "./yoc_rfpa.bin" ];then
     exit 1
 else
     exit 0
