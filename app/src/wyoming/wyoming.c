@@ -37,7 +37,6 @@ static void mic_evt_cb(int source, mic_event_id_t evt_id, void *data, int size) 
       break;
     }
     case MIC_EVENT_PCM_DATA: {
-      // printf("SIZE: %d\n", size);
       memcpy(audio_data[audio_data_sel] + (320 * buffers_cnt), data, size);
       buffers_cnt++;
       if (buffers_cnt >= AUD_SAMP_CNT) {
@@ -198,6 +197,8 @@ static int32_t snd_on_data(uint8_t* data, uint32_t size)
       break;
     }
   }
+  // WiFi stack and other threads did not liked when burst of audio data arrived. This fixes it, but it's not final solution
+  aos_task_yield();
   return 0;
 }
 
@@ -284,6 +285,7 @@ void wyoming_init()
 
   utask_t *task_mic = utask_new("task_mic", 10 * 1024, 20, AOS_DEFAULT_APP_PRI);
   int ret           = aui_mic_init(task_mic);
+  aos_msleep(100); // wait for mic to init....
   aui_mic_event_register(mic_evt_cb);
   aui_mic_start();
   wyoming_mdns_advertise_start();
