@@ -208,6 +208,7 @@ static void handle_wifi_res_cb(uint32_t event_id, const void *param, void *conte
       app_wifi_config_save();
       light_show_state_msg_send(LIGHT_SHOW_IDENTIFY, LIGHT_SHOW_MSG_FLAGS(LIGHT_SHOW_MSG_FLAG_INTERRUPT));
       local_audio_play("wifi-provisioning-success.opus");
+      prov_state.provisioning_done = true;
 
       break;
     }
