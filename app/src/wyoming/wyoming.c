@@ -126,7 +126,6 @@ static void _player_event(player_t *player, uint8_t type, const void *data, uint
     LOGD("wyoming", "Finish playing! :)");
     player_stop(g_player);
     light_show_state_msg_send(LIGHT_SHOW_READY, NULL);
-    // led_pwm_rgb_stop();
     nsfifo_close(g_playback_fifo);
     g_playback_fifo = NULL;
     break;
@@ -199,7 +198,7 @@ static int32_t snd_on_data(uint8_t* data, uint32_t size)
   }
   // WiFi stack and other threads did not liked when burst of audio data arrived. This fixes it, but it's not final solution
   aos_task_yield();
-  return 0;
+  return WSAT_OK;
 }
 
 int32_t snd_init()
@@ -217,6 +216,7 @@ int32_t snd_init()
     is_player_init = 1;
     LOGD("wyo", "Player init!");
   }
+  return WSAT_OK;
 }
 
 int32_t snd_handle_sys_event(enum wsat_sys_event_type type, void* data)
@@ -237,6 +237,7 @@ int32_t snd_handle_sys_event(enum wsat_sys_event_type type, void* data)
   }
   default: break;
   }
+  return WSAT_OK;
 }
 
 static struct wsat_sound snd = {
@@ -249,20 +250,43 @@ static struct wsat_sound snd = {
   }
 };
 
-void wyoming_event(int type)
+static int32_t fback_handle_sys_event(enum wsat_sys_event_type type, void* data)
 {
-  if (type == 0) {
-    light_show_state_msg_send(LIGHT_SHOW_LISTENING, LIGHT_SHOW_MSG_FLAGS(LIGHT_SHOW_MSG_FLAG_INTERRUPT));
-    // light_show_state_msg_send(LIGHT_SHOW_LISTENING_ACTIVE, NULL);
-  } else if (type == 1) {
-    // led_pwm_rgb_stop();
-    light_show_state_msg_send(LIGHT_SHOW_PROCESSING, LIGHT_SHOW_MSG_FLAGS(LIGHT_SHOW_MSG_FLAG_INTERRUPT));
-  } else if (type == 2) {
-    light_show_state_msg_send(LIGHT_SHOW_ANSWER, LIGHT_SHOW_MSG_FLAGS(LIGHT_SHOW_MSG_FLAG_INTERRUPT));
-  } else if (type == 3) {
-    light_show_state_set(LIGHT_SHOW_READY);
+  switch (type) {
+    case WSAT_SYS_EVENT_SAT_CONNECT:
+      light_show_state_set(LIGHT_SHOW_READY);
+      break;
+    case WSAT_SYS_EVENT_SAT_DISCONNECT:
+      light_show_state_set(LIGHT_SHOW_SAT_CONN_PENDING);
+      break;
+    case WSAT_SYS_EVENT_WAKE_DETECTION:
+      light_show_state_msg_send(LIGHT_SHOW_LISTENING, LIGHT_SHOW_MSG_FLAGS(LIGHT_SHOW_MSG_FLAG_INTERRUPT));
+      break;
+    case WSAT_SYS_EVENT_VOICE_STOP:
+      light_show_state_msg_send(LIGHT_SHOW_PROCESSING, LIGHT_SHOW_MSG_FLAGS(LIGHT_SHOW_MSG_FLAG_INTERRUPT));
+      break;
+    case WSAT_SYS_EVENT_SND_AUDIO_START:
+      light_show_state_msg_send(LIGHT_SHOW_ANSWER, LIGHT_SHOW_MSG_FLAGS(LIGHT_SHOW_MSG_FLAG_INTERRUPT));
+      break;
+    // we handle SND_AUDIO_STOP in actual audio sound stop event in snd impl.
+    case WSAT_SYS_EVENT_ERROR:
+      light_show_state_set(LIGHT_SHOW_READY);
+      light_show_state_msg_send(LIGHT_SHOW_ERROR, LIGHT_SHOW_MSG_FLAGS(LIGHT_SHOW_MSG_FLAG_INTERRUPT));
+      break;
+
   }
+  return WSAT_OK;
 }
+
+static struct wsat_feedback fback = {
+  {
+    WSAT_COMPONENT_TYPE_FEEDBACK,
+    NULL,
+    NULL,
+    fback_handle_sys_event,
+    true,
+  }
+};
 
 static void wyoming_server(void *arg)
 {
@@ -270,6 +294,7 @@ static void wyoming_server(void *arg)
   wsat_mic_set(&mic);
   wsat_snd_set(&snd);
   wsat_wake_set(&wake);
+  wsat_fback_set(&fback);
   wsat_run();
 }
 
