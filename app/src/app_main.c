@@ -23,7 +23,7 @@
 #include <bl_efuse.h>
 #include "display/pwm_led/pwm_led.h"
 //#include "aws_iot_mqtt/app_service.h"
-#define DEFAULT_SOFTWARE_VER    "1.0.0"
+#define DEFAULT_SOFTWARE_VER    "0.9.0"
 #define TAG "main"
 
 extern void thirdparty_app_init(void);
