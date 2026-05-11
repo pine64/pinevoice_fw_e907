@@ -8,18 +8,27 @@
 #include <stdint.h>
 
 typedef enum {
-    LIGHT_SHOW_NET_UNAUTH = 0,      //
-    LIGHT_SHOW_NET_AUTH,      
-    LIGHT_SHOW_NET_CONNECTED,
-    LIGHT_SHOW_NET_DISCONNECTED,
-    LIGHT_SHOW_LISTENING_START,
-    LIGHT_SHOW_LISTENING_ACTIVE,
-    LIGHT_SHOW_LISTENING_STOP,
-    LIGHT_SHOW_TALKING_ACTIVE,
-    LIGHT_SHOW_TALKING_STOP,
+    LIGHT_SHOW_NONE,
+    LIGHT_SHOW_PROVISIONING,
+    LIGHT_SHOW_ERROR,
     LIGHT_SHOW_RGB_TEST,
+    LIGHT_SHOW_STARTUP,
+    LIGHT_SHOW_IDENTIFY,
+    LIGHT_SHOW_WIFI_CONNECTING,
+    LIGHT_SHOW_SAT_CONN_PENDING,
+    LIGHT_SHOW_READY,
+    LIGHT_SHOW_PROCESSING,
+    LIGHT_SHOW_ANSWER,
+    LIGHT_SHOW_LISTENING,
     LIGHT_SHOW_STATE_MAX
 } light_show_state_types_t;
+
+typedef uintptr_t light_show_msg_flags_t;
+
+/* Encode message flags for light_show_state_msg_send(..., arg). NULL means no flags. */
+#define LIGHT_SHOW_MSG_FLAG_NONE       ((light_show_msg_flags_t)0U)
+#define LIGHT_SHOW_MSG_FLAG_INTERRUPT  (((light_show_msg_flags_t)1U) << 0)
+#define LIGHT_SHOW_MSG_FLAGS(flags)    ((void *)(uintptr_t)(flags))
 
 int led_pwm_rgb_init(void);
 int led_pwm_rgb_start(void);
@@ -29,5 +38,9 @@ void led_pwm_rgb_uninit(void);
 
 int light_show_state_init(void);
 int light_show_state_msg_send(light_show_state_types_t state_id, void *arg);
+int light_show_state_set(light_show_state_types_t state_id);
+light_show_state_types_t light_show_state_get(void);
+int light_show_state_clear(void);
+int light_show_rgb_clear(void);
 
 #endif

@@ -206,7 +206,7 @@ static void handle_wifi_res_cb(uint32_t event_id, const void *param, void *conte
       }
       app_event_update(EVENT_STATUS_WIFI_PROV_RECVED);
       app_wifi_config_save();
-      light_show_state_msg_send(LIGHT_SHOW_TALKING_STOP, NULL);
+      light_show_state_msg_send(LIGHT_SHOW_IDENTIFY, LIGHT_SHOW_MSG_FLAGS(LIGHT_SHOW_MSG_FLAG_INTERRUPT));
       local_audio_play("wifi-provisioning-success.opus");
 
       break;
@@ -217,6 +217,7 @@ static void handle_wifi_res_cb(uint32_t event_id, const void *param, void *conte
         improv_set_state(IMPROV_STATE_AUTHORIZED);
         app_event_update(EVENT_STATUS_WIFI_PROV_FAILED);
         local_audio_play("wifi-provisioning-failed.opus");
+        light_show_state_msg_send(LIGHT_SHOW_ERROR, LIGHT_SHOW_MSG_FLAGS(LIGHT_SHOW_MSG_FLAG_INTERRUPT));
         app_wifi_stop();
         app_wifi_config_del(app_wifi_config_get_cur_ssid());
       }
@@ -291,7 +292,10 @@ static void handle_rpc_command(evt_data_gatt_char_write_t *e)
   enum improv_error_state_e result = IMPROV_ERROR_UNKNOWN_RPC_COMMAND;
   switch (command) {
     case IMPROV_CMD_WIFI_SETTINGS: result = handle_rpc_cmd_wifi_settings(data, data_length); break;
-    case IMPROV_CMD_IDENTIFY: light_show_state_msg_send(LIGHT_SHOW_NET_DISCONNECTED, NULL); break;
+    case IMPROV_CMD_IDENTIFY: {
+      light_show_state_msg_send(LIGHT_SHOW_IDENTIFY, LIGHT_SHOW_MSG_FLAGS(LIGHT_SHOW_MSG_FLAG_INTERRUPT));
+      break;
+    }
   }
   improv_set_error(result);
 }
@@ -487,7 +491,7 @@ int improv_start(uint32_t timeout_s) {
 
   prov_state.timeout = timeout_s;
   ret = start_adv();
-  light_show_state_msg_send(LIGHT_SHOW_NET_UNAUTH, NULL);
+  light_show_state_set(LIGHT_SHOW_PROVISIONING);
   local_audio_play("wifi-provisioning-started.opus");
 
   // TODO: Timeout

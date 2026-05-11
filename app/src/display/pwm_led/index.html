@@ -1,3 +1,4 @@
+<!-- This tool was created by LLM. Functionality was verified by human. -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -651,7 +652,7 @@
                         </svg>
                         <div class="preview-caption">
                             <strong id="previewTitle">No show selected</strong>
-                            <span id="previewSubtitle">The stroke follows the generated frame list, not a separate animation model.</span>
+                            <span id="previewSubtitle">The stroke follows the generated frame list and simulates the firmware brightness mapping.</span>
                         </div>
                     </section>
 
@@ -678,7 +679,7 @@
                             <h3>Export</h3>
                         </div>
                         <div class="show-notes">
-                            Use <strong>Download Header</strong> in Project Actions to export <code>pwm_led_shows.h</code>. The downloaded header uses the same compiled frame list as this preview.
+                            Use <strong>Download Header</strong> in Project Actions to export <code>pwm_led_shows.h</code>. The downloaded header uses the same compiled frame list as this preview, while the preview also simulates firmware gamma and brightness scaling.
                         </div>
                         <p class="footer-note">JSON download keeps the editable project model. Header download expands each transition into concrete PWM frames for firmware use.</p>
                     </section>
@@ -689,8 +690,13 @@
 
     <script>
         (() => {
-            const STORAGE_KEY = "pwm-led-show-editor-v1";
-            const DEFAULT_EXPECTED_SHOW_COUNT = 9;
+            const STORAGE_KEY = "pwm-led-show-editor-v2";
+            const DEFAULT_EXPECTED_SHOW_COUNT = 12;
+            const RESERVED_NONE_SYMBOL = "LIGHT_SHOW_NONE";
+            const FIRMWARE_PWM_PERIOD = 255;
+            const FIRMWARE_PWM_PERCENT_MAX = 100;
+            const FIRMWARE_BRIGHTNESS_DIVISOR = 2;
+            const FIRMWARE_GAMMA_EXPONENT = 2.2;
             const TRANSITION_OPTIONS = [
                 { value: "instant", label: "Instant Cut" },
                 { value: "linear", label: "Linear Fade" },
@@ -731,6 +737,10 @@
                 loop: false
             };
 
+            const firmwareGammaTable = Array.from({ length: 256 }, (_, index) =>
+                Math.round(Math.pow(index / FIRMWARE_PWM_PERIOD, FIRMWARE_GAMMA_EXPONENT) * FIRMWARE_PWM_PERIOD)
+            );
+
             function uid(prefix) {
                 return prefix + "-" + Math.random().toString(36).slice(2, 10);
             }
@@ -762,46 +772,66 @@
                 };
             }
 
+            function createReservedNoneShow() {
+                return createShow("None", RESERVED_NONE_SYMBOL, false, [
+                    createPoint("#000000", 0, createTransition("instant", 0, 1))
+                ]);
+            }
+
             function createDefaultProject() {
                 return {
-                    version: 1,
+                    version: 2,
                     shows: [
-                        createShow("Network Unauth", "LIGHT_SHOW_NET_UNAUTH", true, [
+                        createReservedNoneShow(),
+                        createShow("Provisioning", "LIGHT_SHOW_PROVISIONING", true, [
                             createPoint("#ffff00", 32, createTransition("linear", 960, 30)),
-                            createPoint("#000000", 500, createTransition("instant", 0, 1))
+                            createPoint("#000000", 532, createTransition("instant", 0, 1))
                         ]),
-                        createShow("Network Auth", "LIGHT_SHOW_NET_AUTH", false, [
-                            createPoint("#000000", 0, createTransition("instant", 0, 1))
-                        ]),
-                        createShow("Network Connected", "LIGHT_SHOW_NET_CONNECTED", false, [
-                            createPoint("#ffffff", 0, createTransition("instant", 0, 1))
-                        ]),
-                        createShow("Network Disconnected", "LIGHT_SHOW_NET_DISCONNECTED", false, [
+                        createShow("Error", "LIGHT_SHOW_ERROR", false, [
                             createPoint("#ff0000", 200, createTransition("linear", 960, 30)),
-                            createPoint("#000000", 0, createTransition("instant", 0, 1))
+                            createPoint("#000000", 32, createTransition("instant", 0, 1))
                         ]),
                         createShow("Listening Start", "LIGHT_SHOW_LISTENING_START", false, [
                             createPoint("#000000", 16, createTransition("ease-in", 160, 10)),
-                            createPoint("#0000ff", 16, createTransition("ease-out", 160, 10)),
-                            createPoint("#00ffff", 100, createTransition("instant", 0, 1))
+                            createPoint("#0000ff", 32, createTransition("ease-out", 160, 10)),
+                            createPoint("#00ffff", 116, createTransition("instant", 0, 1))
                         ]),
-                        createShow("Listening Active", "LIGHT_SHOW_LISTENING_ACTIVE", false, [
-                            createPoint("#00ffff", 0, createTransition("instant", 0, 1))
+                        createShow("RGB Test", "LIGHT_SHOW_RGB_TEST", false, [
+                            createPoint("#ff0000", 1000, createTransition("instant", 0, 1)),
+                            createPoint("#00ff00", 1000, createTransition("instant", 0, 1)),
+                            createPoint("#0000ff", 1000, createTransition("instant", 0, 1)),
+                            createPoint("#000000", 240, createTransition("instant", 0, 1))
                         ]),
-                        createShow("Listening Stop", "LIGHT_SHOW_LISTENING_STOP", false, [
-                            createPoint("#00ffff", 0, createTransition("ease-in-out", 96, 6)),
-                            createPoint("#0000ff", 80, createTransition("ease-out", 96, 6)),
-                            createPoint("#00ffff", 0, createTransition("instant", 0, 1))
+                        createShow("Startup", "LIGHT_SHOW_STARTUP", false, [
+                            createPoint("#151515", 20, createTransition("linear", 200, 10)),
+                            createPoint("#ffffff", 520, createTransition("linear", 240, 12)),
+                            createPoint("#000000", 20, createTransition("instant", 0, 1))
                         ]),
-                        createShow("Talking Active", "LIGHT_SHOW_TALKING_ACTIVE", false, [
-                            createPoint("#0000ff", 16, createTransition("sine", 960, 60)),
-                            createPoint("#00ffff", 16, createTransition("sine", 960, 60)),
-                            createPoint("#0000ff", 0, createTransition("instant", 0, 1))
+                        createShow("Identify", "LIGHT_SHOW_IDENTIFY", false, [
+                            createPoint("#031500", 20, createTransition("linear", 200, 10)),
+                            createPoint("#23ff00", 620, createTransition("linear", 240, 12)),
+                            createPoint("#000000", 20, createTransition("instant", 0, 1))
                         ]),
-                        createShow("Talking Stop", "LIGHT_SHOW_TALKING_STOP", false, [
-                            createPoint("#00ffff", 16, createTransition("ease-in-out", 160, 10)),
-                            createPoint("#0000ff", 16, createTransition("linear", 160, 10)),
-                            createPoint("#000000", 1000, createTransition("instant", 0, 1))
+                        createShow("WiFi Connecting", "LIGHT_SHOW_WIFI_CONNECTING", true, [
+                            createPoint("#040200", 20, createTransition("ease-in", 200, 10)),
+                            createPoint("#e66100", 520, createTransition("ease-out", 240, 12)),
+                            createPoint("#000000", 20, createTransition("instant", 0, 1))
+                        ]),
+                        createShow("SAT Conn Pending", "LIGHT_SHOW_SAT_CONN_PENDING", true, [
+                            createPoint("#040004", 20, createTransition("ease-in", 200, 10)),
+                            createPoint("#ff00ff", 520, createTransition("ease-out", 240, 12)),
+                            createPoint("#000000", 20, createTransition("instant", 0, 1))
+                        ]),
+                        createShow("Ready", "LIGHT_SHOW_READY", false, [
+                            createPoint("#008b8b", 0, createTransition("instant", 0, 1))
+                        ]),
+                        createShow("Processing", "LIGHT_SHOW_PROCESSING", false, [
+                            createPoint("#800080", 0, createTransition("instant", 0, 1))
+                        ]),
+                        createShow("Answer", "LIGHT_SHOW_ANSWER", true, [
+                            createPoint("#2ec37c", 34, createTransition("sine", 367, 11)),
+                            createPoint("#23ff00", 433, createTransition("sine", 366, 11)),
+                            createPoint("#2ec27e", 33, createTransition("instant", 0, 1))
                         ])
                     ]
                 };
@@ -834,6 +864,10 @@
                     return fallback;
                 }
                 return Math.min(max, Math.max(min, parsed));
+            }
+
+            function clampByte(value) {
+                return Math.min(255, Math.max(0, Math.round(value)));
             }
 
             function normalizeTransition(transition) {
@@ -876,11 +910,30 @@
                 };
             }
 
+            function isNoneShow(show) {
+                return sanitizeSymbol(show?.symbol, 0) === RESERVED_NONE_SYMBOL;
+            }
+
+            function normalizeReservedNoneShow(show) {
+                const reservedShow = createReservedNoneShow();
+                reservedShow.id = typeof show?.id === "string" ? show.id : reservedShow.id;
+                return reservedShow;
+            }
+
+            function ensureReservedNoneShow(shows) {
+                const normalizedShows = Array.isArray(shows) ? shows.slice() : [];
+                const noneIndex = normalizedShows.findIndex((show) => isNoneShow(show));
+                const noneShow = normalizeReservedNoneShow(noneIndex >= 0 ? normalizedShows.splice(noneIndex, 1)[0] : null);
+
+                return [noneShow].concat(normalizedShows.filter((show) => !isNoneShow(show)));
+            }
+
             function normalizeProject(input) {
                 const shows = Array.isArray(input?.shows) ? input.shows.map(normalizeShow) : [];
+                const normalizedShows = ensureReservedNoneShow(shows.length ? shows : createDefaultProject().shows);
                 return {
-                    version: 1,
-                    shows: shows.length ? shows : createDefaultProject().shows
+                    version: 2,
+                    shows: normalizedShows
                 };
             }
 
@@ -898,6 +951,7 @@
             }
 
             function persistProject() {
+                project = normalizeProject(project);
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(project));
             }
 
@@ -923,6 +977,33 @@
                 return "#" + [rgb.r, rgb.g, rgb.b]
                     .map((value) => Math.round(value).toString(16).padStart(2, "0"))
                     .join("");
+            }
+
+            function firmwareLinearToPreviewByte(linearValue) {
+                if (linearValue <= 0) {
+                    return 0;
+                }
+
+                return clampByte(Math.pow(Math.min(1, linearValue), 1 / FIRMWARE_GAMMA_EXPONENT) * 255);
+            }
+
+            function simulateFirmwareChannelForPreview(channelValue) {
+                const correctedChannel = Math.floor(firmwareGammaTable[clampByte(channelValue)] / FIRMWARE_BRIGHTNESS_DIVISOR);
+                const dutyPercent = Math.floor(
+                    (FIRMWARE_PWM_PERCENT_MAX * correctedChannel + Math.floor(FIRMWARE_PWM_PERIOD / 2)) / FIRMWARE_PWM_PERIOD
+                );
+
+                return firmwareLinearToPreviewByte(dutyPercent / FIRMWARE_PWM_PERCENT_MAX);
+            }
+
+            function simulateFirmwareColorForPreview(color) {
+                const rgb = hexToRgb(color);
+
+                return rgbToHex({
+                    r: simulateFirmwareChannelForPreview(rgb.r),
+                    g: simulateFirmwareChannelForPreview(rgb.g),
+                    b: simulateFirmwareChannelForPreview(rgb.b)
+                });
             }
 
             function easeValue(type, t) {
@@ -1169,7 +1250,7 @@
 
             function generateProjectJson() {
                 return JSON.stringify({
-                    version: 1,
+                    version: 2,
                     shows: project.shows
                 }, null, 2);
             }
@@ -1222,6 +1303,8 @@
                 dom.showList.innerHTML = project.shows.map((show) => {
                     const frames = compileShow(show);
                     const activeClass = show.id === selectedShowId ? "active" : "";
+                    const reservedTag = isNoneShow(show) ? "<span class=\"tag\">Reserved</span>" : "";
+                    const previewSwatchColor = simulateFirmwareColorForPreview(show.points[0]?.color || "#000000");
                     return [
                         "<button type=\"button\" class=\"show-item " + activeClass + "\" data-action=\"select-show\" data-show-id=\"" + show.id + "\">",
                         "  <div class=\"show-item-top\">",
@@ -1229,10 +1312,11 @@
                         "      <div class=\"show-name\">" + escapeHtml(show.name) + "</div>",
                         "      <div class=\"show-symbol\">" + escapeHtml(show.symbol) + "</div>",
                         "    </div>",
-                        "    <span class=\"swatch\" style=\"--swatch:" + normalizeHexColor(show.points[0]?.color || "#000000") + ";\"></span>",
+                        "    <span class=\"swatch\" style=\"--swatch:" + previewSwatchColor + ";\"></span>",
                         "  </div>",
                         "  <div class=\"show-meta\">",
                         "    <span class=\"tag " + (show.loop ? "pill-strong" : "") + "\">" + (show.loop ? "Loop" : "One-shot") + "</span>",
+                        "    " + reservedTag,
                         "    <span class=\"tag\">" + show.points.length + " stops</span>",
                         "    <span class=\"tag\">" + frames.length + " frames</span>",
                         "  </div>",
@@ -1253,6 +1337,22 @@
                 const show = getSelectedShow();
                 if (!show) {
                     dom.editorPanel.innerHTML = "<div class=\"empty-state\">No show selected.</div>";
+                    return;
+                }
+
+                if (isNoneShow(show)) {
+                    const frames = compileShow(show);
+                    dom.editorPanel.innerHTML = [
+                        "<div class=\"show-notes\">",
+                        "  <strong>LIGHT_SHOW_NONE</strong> is reserved as the enum index 0 sentinel for the firmware state API. The editor keeps it fixed as a one-shot black/off entry.",
+                        "</div>",
+                        "<div class=\"meta-grid\">",
+                        "  <label><span>Show Name</span><input type=\"text\" value=\"" + escapeAttribute(show.name) + "\" disabled></label>",
+                        "  <label><span>Enum Symbol</span><input type=\"text\" value=\"" + escapeAttribute(show.symbol) + "\" disabled></label>",
+                        "  <label class=\"full\"><span>Playback</span><div class=\"show-notes\">Reserved entries do not loop and always export as a single black/off frame.</div></label>",
+                        "</div>",
+                        "<div class=\"show-notes\">Compiled preview: " + frames.length + " frame, " + showDurationMs(frames) + " ms, ending at " + colorToHeaderHex(frames[frames.length - 1]?.color || "#000000") + ".</div>"
+                    ].join("");
                     return;
                 }
 
@@ -1358,7 +1458,7 @@
                         const weight = totalDuration > 0
                             ? Math.max(frame.durationMs, 1)
                             : fallbackWeight;
-                        return "<span class=\"timeline-segment\" style=\"--segment-weight:" + weight + ";--segment-color:" + frame.color + ";\"></span>";
+                        return "<span class=\"timeline-segment\" style=\"--segment-weight:" + weight + ";--segment-color:" + simulateFirmwareColorForPreview(frame.color) + ";\"></span>";
                     }).join("")
                     : "<span class=\"timeline-segment\" style=\"--segment-weight:1;--segment-color:#000000;\"></span>";
             }
@@ -1408,7 +1508,7 @@
             }
 
             function applyPreviewFrame(frame) {
-                const color = normalizeHexColor(frame?.color || "#000000");
+                const color = simulateFirmwareColorForPreview(frame?.color || "#000000");
                 dom.previewRing.style.setProperty("--preview-color", color);
                 dom.previewRing.setAttribute("stroke", color);
             }
@@ -1435,7 +1535,7 @@
                 const frames = selectedShow ? compileShow(selectedShow) : [];
                 dom.previewTitle.textContent = selectedShow ? selectedShow.name : "No show selected";
                 dom.previewSubtitle.textContent = selectedShow
-                    ? sanitizeSymbol(selectedShow.symbol, 0)
+                    ? sanitizeSymbol(selectedShow.symbol, 0) + " \u00b7 preview simulates firmware gamma + brightness scaling"
                     : "Select or create a show to preview it.";
 
                 renderSummary(selectedShow, frames);
@@ -1445,6 +1545,7 @@
             }
 
             function renderAll() {
+                project = normalizeProject(project);
                 persistProject();
                 renderShowList();
                 renderEditor();
@@ -1480,7 +1581,7 @@
             function handleEditorInput(event) {
                 const target = event.target;
                 const show = getSelectedShow();
-                if (!show) {
+                if (!show || isNoneShow(show)) {
                     return;
                 }
 
@@ -1552,6 +1653,11 @@
                 const action = actionButton.dataset.action;
                 const show = getSelectedShow();
                 if (!show) {
+                    return;
+                }
+
+                if (isNoneShow(show)) {
+                    alert("LIGHT_SHOW_NONE is reserved and cannot be edited or removed.");
                     return;
                 }
 
@@ -1655,7 +1761,7 @@
             function handleEditorChange(event) {
                 const target = event.target;
                 const show = getSelectedShow();
-                if (!show) {
+                if (!show || isNoneShow(show)) {
                     return;
                 }
 

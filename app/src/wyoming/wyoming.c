@@ -32,7 +32,7 @@ static void mic_evt_cb(int source, mic_event_id_t evt_id, void *data, int size) 
         } else {
           local_audio_play("wsat-is-disconnected.opus");
         }
-        light_show_state_msg_send(LIGHT_SHOW_ERROR, NULL);
+        light_show_state_msg_send(LIGHT_SHOW_ERROR, LIGHT_SHOW_MSG_FLAGS(LIGHT_SHOW_MSG_FLAG_INTERRUPT));
       }
       break;
     }
@@ -126,7 +126,7 @@ static void _player_event(player_t *player, uint8_t type, const void *data, uint
   case PLAYER_EVENT_FINISH:
     LOGD("wyoming", "Finish playing! :)");
     player_stop(g_player);
-    light_show_state_msg_send(LIGHT_SHOW_NET_AUTH, NULL);
+    light_show_state_msg_send(LIGHT_SHOW_READY, NULL);
     // led_pwm_rgb_stop();
     nsfifo_close(g_playback_fifo);
     g_playback_fifo = NULL;
@@ -251,15 +251,15 @@ static struct wsat_sound snd = {
 void wyoming_event(int type)
 {
   if (type == 0) {
-    light_show_state_msg_send(LIGHT_SHOW_LISTENING_START, NULL);
+    light_show_state_msg_send(LIGHT_SHOW_LISTENING, LIGHT_SHOW_MSG_FLAGS(LIGHT_SHOW_MSG_FLAG_INTERRUPT));
     // light_show_state_msg_send(LIGHT_SHOW_LISTENING_ACTIVE, NULL);
   } else if (type == 1) {
     // led_pwm_rgb_stop();
-    light_show_state_msg_send(LIGHT_SHOW_NET_AUTH, NULL);
+    light_show_state_msg_send(LIGHT_SHOW_PROCESSING, LIGHT_SHOW_MSG_FLAGS(LIGHT_SHOW_MSG_FLAG_INTERRUPT));
   } else if (type == 2) {
-    light_show_state_msg_send(LIGHT_SHOW_TALKING_ACTIVE, NULL);
+    light_show_state_msg_send(LIGHT_SHOW_ANSWER, LIGHT_SHOW_MSG_FLAGS(LIGHT_SHOW_MSG_FLAG_INTERRUPT));
   } else if (type == 3) {
-    light_show_state_msg_send(LIGHT_SHOW_NET_CONNECTED, NULL);
+    light_show_state_set(LIGHT_SHOW_READY);
   }
 }
 

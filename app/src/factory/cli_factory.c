@@ -16,6 +16,8 @@
 #include <player.h>
 #include <yoc/mic.h>
 
+#include "display/pwm_led/pwm_led.h"
+
 
 extern void fct_pcm_chk_record(char *play_url, int second, int vol, int pcmchk, int savefile);
 void fct_step(int step, int argc, char **argv);
@@ -102,7 +104,7 @@ static void scan_compeleted(aos_dev_t *dev, uint16_t number, wifi_ap_record_t *a
 static void fct_led_test()
 {
     LOGI(TAG, "RGB test start");
-    light_show_state_msg_send(9, NULL);
+    light_show_state_msg_send(LIGHT_SHOW_RGB_TEST, NULL);
 }
 
 static wifi_event_func wifi_event = {NULL, NULL, scan_compeleted, NULL};

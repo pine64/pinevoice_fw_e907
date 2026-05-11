@@ -6,6 +6,7 @@
 #include <yoc/netmgr.h>
 #include <yoc/netmgr_service.h>
 #include <improv/improv.h>
+#include <display/pwm_led/pwm_led.h>
 
 #include <ntp.h>
 
@@ -250,6 +251,7 @@ static wifi_mode_e network_event_init(void)
         app_sys_set_boot_reason(BOOT_REASON_SOFT_RESET);
         return MODE_WIFI_PAIRING;
     } else {
+        light_show_state_set(LIGHT_SHOW_WIFI_CONNECTING);
         app_wifi_network_init_list();
     }
 

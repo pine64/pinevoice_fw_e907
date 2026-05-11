@@ -103,8 +103,12 @@ static void app_event_mgr(uint32_t event_id, const void *data, void *context)
 
             /*网络连接*/
         case EVENT_STATUS_WIFI_CONN_SUCCESS:
+            light_show_state_set(LIGHT_SHOW_SAT_CONN_PENDING);
             break;
         case EVENT_STATUS_WIFI_CONN_FAILED:
+            if (light_show_state_get() != LIGHT_SHOW_PROVISIONING) { // TODO: Eugh, rework
+                light_show_state_set(LIGHT_SHOW_WIFI_CONNECTING);
+            }
             if(BL_RST_POWER_OFF == bl_sys_rstinfo_get_ext())
             {
                 // light_show_state_msg_send(LIGHT_SHOW_NET_DISCONNECTED, NULL);

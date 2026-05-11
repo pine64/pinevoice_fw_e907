@@ -21,6 +21,7 @@
 #include "version.h"
 #include "bl606p_clock.h"
 #include <bl_efuse.h>
+#include "display/pwm_led/pwm_led.h"
 //#include "aws_iot_mqtt/app_service.h"
 #define DEFAULT_SOFTWARE_VER    "1.0.0"
 #define TAG "main"
@@ -75,6 +76,9 @@ int smartspeaker_main(int argc, char *argv[])
 
     app_player_init();
 
+    light_show_state_msg_send(LIGHT_SHOW_STARTUP, NULL);
+    aos_msleep(1000);
+
 #if defined(CONFIG_WIFI_NET) && (CONFIG_WIFI_NET == 1)
     app_network_init();
 #endif
@@ -82,6 +86,7 @@ int smartspeaker_main(int argc, char *argv[])
     // app_mic_init();
 
     board_app_init();
+
 
     if (app_sys_get_boot_reason() != BOOT_REASON_FACTORY_MODE) {
         wyoming_init();

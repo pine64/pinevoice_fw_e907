@@ -34,21 +34,6 @@ void app_key_msg_send(int keymsg_id, void *priv)
     }
 }
 
-__attribute__(( weak )) int smartspeak_key_key_msg_play_pressed(void)
-{
-    if (app_network_internet_is_connected())
-    {
-        // printf("==================================== smartspeak_key_key_msg_play_pressed KEY_MSG_PLAY press\r\n");
-        LOGI(TAG, "MIC_EVENT_SESSION_START");
-        light_show_state_msg_send(LIGHT_SHOW_LISTENING_START, NULL);
-        aui_mic_control(MIC_CTRL_START_PCM); 
-    }else{
-        light_show_state_msg_send(LIGHT_SHOW_NET_UNAUTH, NULL);
-        // TODO: local_audio_play("network_not_connected_en.mp3");
-    }
-    return 0;
-}
-
 __attribute__(( weak )) int smartspeak_key_key_msg_factory_pressed(void)
 {
     printf("==================================== smartspeak_key_key_msg_factory_pressed KEY_MSG_PLAY press\r\n");
@@ -146,7 +131,7 @@ static void key_msg_proc_task(void *arg)
                     } else {
                         local_audio_play("wsat-is-disconnected.opus");
                     }
-                    light_show_state_msg_send(LIGHT_SHOW_ERROR, NULL);
+                    light_show_state_msg_send(LIGHT_SHOW_ERROR, LIGHT_SHOW_MSG_FLAGS(LIGHT_SHOW_MSG_FLAG_INTERRUPT));
                 }
                 // smartspeak_key_key_msg_play_pressed();
 #endif
@@ -172,7 +157,7 @@ static void key_msg_proc_task(void *arg)
             case KEY_MSG_FACTORY:
                 LOGD(TAG, "factory");
                 if (!(app_wifi_config_is_empty() || app_sys_get_boot_reason() == BOOT_REASON_WIFI_CONFIG)) {
-                    light_show_state_msg_send(LIGHT_SHOW_NET_DISCONNECTED, NULL);
+                    // light_show_state_msg_send(LIGHT_SHOW_NET_DISCONNECTED, NULL);
                     aos_msleep(1000);
                     app_sys_reboot(BOOT_REASON_WIFI_CONFIG);
                 }
