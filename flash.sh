@@ -14,8 +14,8 @@ if [ "$2" == "full" ]; then
     # --dts="/workspace/boards/bl606p_pinevoice_e907/configs/chip_params.dts" \ # DTS is not required, as we already flash _rfpa.bin
 
 else
+            # --boot2="../../boards/bl606p_pinevoice_e907/bootimgs/boot2_isp_release.bin" \
     ../../tools/flashtool/bflb_iot_tool-ubuntu --interface=uart --baudrate=2000000 --chipname=bl606p \
-            --boot2="../../boards/bl606p_pinevoice_e907/bootimgs/boot2_isp_release.bin" \
             --firmware="yoc_rfpa.bin" \
             --pt="../../boards/bl606p_pinevoice_e907/configs/partition.toml" \
             --port ${PV_TTY}

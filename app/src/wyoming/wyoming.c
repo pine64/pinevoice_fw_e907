@@ -19,13 +19,13 @@ static aos_sem_t audio_sem;
 static uint8_t buffers_cnt = 0;
 static uint8_t data_ready = 0;
 
-
+#define TAG "wyoming"
 
 static void mic_evt_cb(int source, mic_event_id_t evt_id, void *data, int size) {
   static uint32_t i = 0;
   switch (evt_id) {
     case MIC_EVENT_SESSION_START: {
-      LOGD("wyoming", "WAKE UP!!!");
+      LOGD(TAG, "WAKE UP!!!");
       int32_t ret = wsat_wake_detection();
       if (!app_network_internet_is_connected() || ret == -WSAT_ERROR_SAT_DISCONNECTED) {
         if (!app_network_internet_is_connected()) {
@@ -42,7 +42,7 @@ static void mic_evt_cb(int source, mic_event_id_t evt_id, void *data, int size) 
       buffers_cnt++;
       if (buffers_cnt >= AUD_SAMP_CNT) {
         if (data_ready) {
-          LOGE("wyoming", "Data not processed");
+          LOGE(TAG, "Data not processed");
         }
         buffers_cnt = 0;
         audio_data_sel = audio_data_sel ? 0 : 1;
@@ -83,14 +83,14 @@ static int32_t mic_init()
   aos_task_t task_handle;
   aos_task_new_ext(&task_handle, "mic_streamer", mic_streamer_fn, (void *)NULL, 4096, AOS_DEFAULT_APP_PRI);
 
-  LOGI("wyoming", "MIC_CTRL_START_PCM");
+  LOGI(TAG, "MIC_CTRL_START_PCM");
   aui_mic_control(MIC_CTRL_START_PCM);
   return 0;
 }
 
 static int32_t mic_destroy()
 {
-  LOGI("wyoming", "MIC_CTRL_STOP_PCM");
+  LOGI(TAG, "MIC_CTRL_STOP_PCM");
   aui_mic_control(MIC_CTRL_STOP_PCM);
   return 0;
 }
@@ -118,13 +118,13 @@ static void _player_event(player_t *player, uint8_t type, const void *data, uint
 
   switch (type) {
   case PLAYER_EVENT_ERROR:
-    LOGE("wyoming", "Error player!");
+    LOGE(TAG, "Error player!");
     player_stop(g_player);
     break;
   case PLAYER_EVENT_START:
     break;
   case PLAYER_EVENT_FINISH:
-    LOGD("wyoming", "Finish playing! :)");
+    LOGD(TAG, "Finish playing! :)");
     player_stop(g_player);
     light_show_state_msg_send(LIGHT_SHOW_READY, NULL);
     nsfifo_close(g_playback_fifo);
@@ -144,19 +144,19 @@ static int32_t snd_start_stream(uint32_t rate, uint8_t width, uint8_t channels)
 
   g_playback_fifo = nsfifo_open(fifo_tts_url, O_CREAT, 1*1024*1024);
   if (NULL == g_playback_fifo) {
-    LOGE("wyoming", "nsfifo_open fail");
+    LOGE(TAG, "nsfifo_open fail");
     return;
   }
 
   player_play(g_player, fifo_tts_url, 0);
-  LOGD("wyo", "Start stream %d", rate);
+  LOGD(TAG, "Start stream %d", rate);
   return 0;
 }
 
 static int32_t snd_stop_stream()
 {
   nsfifo_set_eof(g_playback_fifo, 0, 1); // set weof
-  LOGD("wyo", "Stop stream");
+  LOGD(TAG, "Stop stream");
   return 0;
 }
 
@@ -173,7 +173,7 @@ static int32_t snd_on_data(uint8_t* data, uint32_t size)
     wlen = nsfifo_get_wpos(g_playback_fifo, &pos, 10*1000);
     nsfifo_get_eof(g_playback_fifo, &reof, NULL);
     if (reof) {
-      LOGE("wyoming", "get wpos err. wlen = %d, reof = %d", wlen, reof);
+      LOGE(TAG, "get wpos err. wlen = %d, reof = %d", wlen, reof);
       return 0;
     }
 
@@ -215,7 +215,7 @@ int32_t snd_init()
     g_player = player_new(&ply_cnf);
 
     is_player_init = 1;
-    LOGD("wyo", "Player init!");
+    LOGD(TAG, "Player init!");
   }
   return WSAT_OK;
 }
@@ -317,11 +317,11 @@ void wyoming_init()
   aui_mic_event_register(mic_evt_cb);
   aui_mic_start();
   wyoming_mdns_advertise_start();
-  LOGI("wyo", "Wyoming init\r\n");
+  LOGI(TAG, "Wyoming init\r\n");
 }
 
 void cmd_wyoming(char *wbuf, int wbuf_len, int argc, char **argv) {
-  LOGI("wyo", "Starting Wyoming...\r\n");
+  LOGI(TAG, "Starting Wyoming...\r\n");
   wyoming_start();
 }
 
