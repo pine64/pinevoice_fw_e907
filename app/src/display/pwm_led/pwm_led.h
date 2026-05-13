@@ -20,6 +20,8 @@ typedef enum {
     LIGHT_SHOW_PROCESSING,
     LIGHT_SHOW_ANSWER,
     LIGHT_SHOW_LISTENING,
+    LIGHT_SHOW_VOLUME_UP,
+    LIGHT_SHOW_VOLUME_DOWN,
     LIGHT_SHOW_STATE_MAX
 } light_show_state_types_t;
 

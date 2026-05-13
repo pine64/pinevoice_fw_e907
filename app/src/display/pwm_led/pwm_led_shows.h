@@ -284,6 +284,37 @@ static const pwm_led_frame_t s_light_show_listening[] = {
     PWM_LED_FRAME(66, 0x0000FF)
 };
 
+static const pwm_led_frame_t s_light_show_volume_up[] = {
+    PWM_LED_FRAME(20, 0x151515),
+    PWM_LED_FRAME(20, 0x2B2B2B),
+    PWM_LED_FRAME(20, 0x404040),
+    PWM_LED_FRAME(20, 0x555555),
+    PWM_LED_FRAME(20, 0x6A6A6A),
+    PWM_LED_FRAME(20, 0x808080),
+    PWM_LED_FRAME(20, 0x959595),
+    PWM_LED_FRAME(20, 0xAAAAAA),
+    PWM_LED_FRAME(20, 0xBFBFBF),
+    PWM_LED_FRAME(20, 0xD5D5D5),
+    PWM_LED_FRAME(20, 0xEAEAEA),
+    PWM_LED_FRAME(20, 0xFFFFFF)
+};
+
+static const pwm_led_frame_t s_light_show_volume_down[] = {
+    PWM_LED_FRAME(10, 0xFFFFFF),
+    PWM_LED_FRAME(20, 0xEAEAEA),
+    PWM_LED_FRAME(20, 0xD5D5D5),
+    PWM_LED_FRAME(20, 0xBFBFBF),
+    PWM_LED_FRAME(20, 0xAAAAAA),
+    PWM_LED_FRAME(20, 0x959595),
+    PWM_LED_FRAME(20, 0x808080),
+    PWM_LED_FRAME(20, 0x6A6A6A),
+    PWM_LED_FRAME(20, 0x555555),
+    PWM_LED_FRAME(20, 0x404040),
+    PWM_LED_FRAME(20, 0x2B2B2B),
+    PWM_LED_FRAME(20, 0x151515),
+    PWM_LED_FRAME(20, 0x000000)
+};
+
 static const pwm_led_show_t g_pwm_led_shows[LIGHT_SHOW_STATE_MAX] = {
     PWM_LED_SHOW(0, s_light_show_none),
     PWM_LED_SHOW(1, s_light_show_provisioning),
@@ -294,9 +325,11 @@ static const pwm_led_show_t g_pwm_led_shows[LIGHT_SHOW_STATE_MAX] = {
     PWM_LED_SHOW(1, s_light_show_wifi_connecting),
     PWM_LED_SHOW(1, s_light_show_sat_conn_pending),
     PWM_LED_SHOW(0, s_light_show_ready),
-    PWM_LED_SHOW(1, s_light_show_processing),
+    PWM_LED_SHOW(0, s_light_show_processing),
     PWM_LED_SHOW(1, s_light_show_answer),
-    PWM_LED_SHOW(1, s_light_show_listening)
+    PWM_LED_SHOW(1, s_light_show_listening),
+    PWM_LED_SHOW(0, s_light_show_volume_up),
+    PWM_LED_SHOW(0, s_light_show_volume_down)
 };
 
 #endif

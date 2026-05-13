@@ -56,15 +56,7 @@ static void key_msg_proc_task(void *arg)
             continue;
         }
 
-        switch (keymsg_id) {
-            case KEY_MSG_VOL_UP_0:
-                // if (light_state_get() != LIGHT_SHOW_NET_AUTH) {
-                //     LOGE(TAG, "light state unauth:%d", light_state_get());
-                //     break;
-                // }
-                led_pwm_rgb_config(1000, 1000, 1000, 100, 100, 100);
-                break;
-            
+        switch (keymsg_id) {          
             case KEY_MSG_VOL_UP:
                 // if (light_state_get() != LIGHT_SHOW_NET_AUTH) {
                 //     LOGE(TAG, "light state unauth:%d", light_state_get());
@@ -80,15 +72,7 @@ static void key_msg_proc_task(void *arg)
                 LOGD(TAG, "vol up:%d", vol);
                 volume2db2regval(vol);
                 //smtaudio_vol_up(10);
-                led_pwm_rgb_config(1000, 1000, 1000, 0, 0, 0);
-                break;
-
-            case KEY_MSG_VOL_DOWN_0:
-                // if (light_state_get() != LIGHT_SHOW_NET_AUTH) {
-                //     LOGE(TAG, "light state unauth:%d", light_state_get());
-                //     break;
-                // }
-                led_pwm_rgb_config(1000, 1000, 1000, 100, 100, 100);
+                light_show_state_msg_send(LIGHT_SHOW_VOLUME_UP, LIGHT_SHOW_MSG_FLAGS(LIGHT_SHOW_MSG_FLAG_INTERRUPT));
                 break;
             
             case KEY_MSG_VOL_DOWN:
@@ -105,7 +89,8 @@ static void key_msg_proc_task(void *arg)
                 }
                 LOGD(TAG, "vol down:%d", vol);
                 volume2db2regval(vol);
-                led_pwm_rgb_config(1000, 1000, 1000, 0, 0, 0);
+                // led_pwm_rgb_config(1000, 1000, 1000, 0, 0, 0);
+                light_show_state_msg_send(LIGHT_SHOW_VOLUME_DOWN, LIGHT_SHOW_MSG_FLAGS(LIGHT_SHOW_MSG_FLAG_INTERRUPT));
                 //smtaudio_vol_down(10);
                 break;
 
