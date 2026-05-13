@@ -10,6 +10,7 @@
 #include <player.h>
 #include "../display/pwm_led/pwm_led.h"
 #include "wyoming.h"
+#include "../version.h"
 
 #define AUD_SAMP_CNT 5
 static uint8_t audio_data[2][320*AUD_SAMP_CNT];
@@ -291,6 +292,8 @@ static struct wsat_feedback fback = {
 static void wyoming_server(void *arg)
 {
   wsat_init();
+  wsat_settings_set(WSAT_SETTING_TYPE_SATELLITE_NAME, "PineVoice");
+  wsat_settings_set(WSAT_SETTING_TYPE_SATELLITE_VERSION, DEFAULT_SOFTWARE_VER);
   wsat_mic_set(&mic);
   wsat_snd_set(&snd);
   wsat_wake_set(&wake);
