@@ -76,11 +76,9 @@ void fct_step(int step, int argc, char **argv)
             static bool cdc_enabled = false;
             if (cdc_enabled) return;
             cdc_enabled = true;
-            extern void cdc_init(void);
-            usb_clock_init();
-            cdc_init();
+            extern void fct_cdc_acm_init(uint8_t busid, uintptr_t reg_base);
+            fct_cdc_acm_init(0, 0);
 
-            usbd_initialize();
             break;
         }
     }
