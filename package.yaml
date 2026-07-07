@@ -146,7 +146,9 @@ build_config:
 #   - src/*.c                              # 例：组件 src 目录下所有的扩展名为 c 的源代码文件
 source_file:
   - app/board/bl606p/*.c
-  - app/src/*.c
+  - app/src/app_main.c
+  - app/src/app_cli_cmd.c
+  - app/src/usb_console.c ? <CONFIG_STDIO_USB>
   - app/src/cli/*.c
   - app/src/player/*.c
   - app/src/sys/*.c
@@ -169,6 +171,7 @@ def_config:                              # 组件的可配置项
     CONFIG_DEBUG_MM: 1
     CONFIG_SOFTWDT: 1
     CONFIG_BLOS_LOG_ENABLE: 1
+    CONFIG_STDIO_USB: 1
     # CONFIG_DEBUG_UTASK: 1
     CONFIG_SOFTWDT_TASK_STACK_SIZE: 2048
     CLI_CONFIG_STACK_SIZE: 32768

@@ -50,6 +50,13 @@ int smartspeaker_main(int argc, char *argv[])
     // test();
     // app_sys_set_boot_reason_cache(BOOT_REASON_FACTORY_MODE);
 
+#if CONFIG_STDIO_USB
+    if (app_sys_get_boot_reason() != BOOT_REASON_FACTORY_MODE) {
+        extern int usb_console_cdc_acm_init(uint8_t busid, uintptr_t reg_base);
+        usb_console_cdc_acm_init(0, 0);
+    }
+#endif
+
     app_cli_init();
 
     printf("git commit:"BL606P_GIT_VERSION"\r\n");
