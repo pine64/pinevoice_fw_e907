@@ -111,6 +111,24 @@ struct wsat_microphone mic = {
 static nsfifo_t* g_playback_fifo;
 static player_t* g_player;
 
+// Home Assistant sends audio-start for an announcement before its TTS audio
+// exists, so the first chunk can arrive several seconds later (slow cloud
+// TTS). The player's default stream receive timeout is 3 s; past that it
+// errors out. Allow for slow TTS before giving up.
+#define WYO_TTS_RCV_TIMEOUT_MS (30 * 1000)
+
+// Stop playback and release the stream. Used when playback finishes and when
+// it fails, so the LED ring and the FIFO are reset in both cases.
+static void playback_cleanup(void)
+{
+  player_stop(g_player);
+  light_show_state_msg_send(LIGHT_SHOW_READY, NULL);
+  if (g_playback_fifo) {
+    nsfifo_close(g_playback_fifo);
+    g_playback_fifo = NULL;
+  }
+}
+
 static void _player_event(player_t *player, uint8_t type, const void *data, uint32_t len)
 {
   UNUSED(len);
@@ -118,17 +136,16 @@ static void _player_event(player_t *player, uint8_t type, const void *data, uint
 
   switch (type) {
   case PLAYER_EVENT_ERROR:
+    // Previously only stopped the player: the LED stayed on "answer" (green)
+    // and the FIFO stayed open, so the next audio-start failed to open it.
     LOGE(TAG, "Error player!");
-    player_stop(g_player);
+    playback_cleanup();
     break;
   case PLAYER_EVENT_START:
     break;
   case PLAYER_EVENT_FINISH:
     LOGD(TAG, "Finish playing! :)");
-    player_stop(g_player);
-    light_show_state_msg_send(LIGHT_SHOW_READY, NULL);
-    nsfifo_close(g_playback_fifo);
-    g_playback_fifo = NULL;
+    playback_cleanup();
     break;
   default:
     break;
@@ -137,7 +154,12 @@ static void _player_event(player_t *player, uint8_t type, const void *data, uint
 
 static int32_t snd_start_stream(uint32_t rate, uint8_t width, uint8_t channels)
 {
-  // TODO: Check if FIFO is opened or not.
+  if (g_playback_fifo) {
+    // A previous stream never finished (e.g. a new announcement arrived while
+    // one was playing). Release it, or opening the FIFO below fails.
+    LOGE(TAG, "Previous stream still open, cleaning up");
+    playback_cleanup();
+  }
 
   char fifo_tts_url[128];
   snprintf(fifo_tts_url, sizeof(fifo_tts_url), "fifo://wyo_tts?avformat=rawaudio&avcodec=pcm_s16le&channel=1&rate=%d", rate);
@@ -145,7 +167,8 @@ static int32_t snd_start_stream(uint32_t rate, uint8_t width, uint8_t channels)
   g_playback_fifo = nsfifo_open(fifo_tts_url, O_CREAT, 1*1024*1024);
   if (NULL == g_playback_fifo) {
     LOGE(TAG, "nsfifo_open fail");
-    return;
+    light_show_state_msg_send(LIGHT_SHOW_READY, NULL);
+    return -1;
   }
 
   player_play(g_player, fifo_tts_url, 0);
@@ -155,6 +178,9 @@ static int32_t snd_start_stream(uint32_t rate, uint8_t width, uint8_t channels)
 
 static int32_t snd_stop_stream()
 {
+  if (NULL == g_playback_fifo) {
+    return 0; // stream failed to start or already cleaned up
+  }
   nsfifo_set_eof(g_playback_fifo, 0, 1); // set weof
   LOGD(TAG, "Stop stream");
   return 0;
@@ -169,8 +195,19 @@ static int32_t snd_on_data(uint8_t* data, uint32_t size)
   int off = 0;
   int tmp_len;
 
+  if (NULL == g_playback_fifo) {
+    return 0; // no stream: drop the audio instead of writing to a NULL FIFO
+  }
+
   while (1) {
+    if (NULL == g_playback_fifo) {
+      return 0; // playback failed and was cleaned up mid-write
+    }
     wlen = nsfifo_get_wpos(g_playback_fifo, &pos, 10*1000);
+    if (wlen < 0) {
+      LOGE(TAG, "get wpos err. wlen = %d", wlen);
+      return 0;
+    }
     nsfifo_get_eof(g_playback_fifo, &reof, NULL);
     if (reof) {
       LOGE(TAG, "get wpos err. wlen = %d, reof = %d", wlen, reof);
@@ -211,6 +248,7 @@ int32_t snd_init()
 
     player_conf_init(&ply_cnf);
     ply_cnf.resample_rate = 48000;
+    ply_cnf.rcv_timeout   = WYO_TTS_RCV_TIMEOUT_MS;
     ply_cnf.event_cb      = _player_event;
     g_player = player_new(&ply_cnf);
 
